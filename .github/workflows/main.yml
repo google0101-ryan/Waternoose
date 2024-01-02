@@ -10,7 +10,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: DenverCoder1/doxygen-github-pages-action@v1
+      - name: Install dependencies
+        run: sudo apt-get install doxygen graphviz -y
+      - name: Checkout doxygen
+        uses: DenverCoder1/doxygen-github-pages-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
