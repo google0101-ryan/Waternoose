@@ -102,6 +102,10 @@ XexLoader::XexLoader(uint8_t *buffer, size_t len)
 		case 0x103FF:
 			importBaseAddr = hdr.offset;
 			break;
+		case 0x20200:
+			stackSize = hdr.value;
+			printf("Stack size is 0x%08x\n", hdr.value);
+			break;
 		default:
 			printf("Unknown optional header ID: 0x%08x\n", hdr.id);
 		}
@@ -176,6 +180,11 @@ XexLoader::XexLoader(uint8_t *buffer, size_t len)
 uint32_t XexLoader::GetEntryPoint() const
 {
 	return entryPoint;
+}
+
+uint32_t XexLoader::GetStackSize() const
+{
+	return stackSize;
 }
 
 void XexLoader::ParseFileInfo(uint32_t offset)

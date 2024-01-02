@@ -1,5 +1,6 @@
 #include <loader/xex.h>
 #include <memory/memory.h>
+#include <cpu/CPU.h>
 #include <cstdio>
 #include <fstream>
 
@@ -23,11 +24,16 @@ int main(int argc, char** argv)
 
 	Memory::Initialize();
 
+	std::atexit(Memory::Dump);
+
 	XexLoader loader((uint8_t*)buf, size);
+	
+	CPUThread mainThread(loader.GetEntryPoint(), loader.GetStackSize());
 
-	printf("0x%08x\n", Memory::Read32(loader.GetEntryPoint()));
-
-	Memory::Dump();
+	while (1)
+	{
+		mainThread.Run();
+	}
 
 	return 0;
 }

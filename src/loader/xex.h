@@ -77,6 +77,7 @@ public:
 	XexLoader(uint8_t* buffer, size_t len);
 
 	uint32_t GetEntryPoint() const;
+	uint32_t GetStackSize() const;
 
 	/// @brief Get the list of libraries imported by the .xex file
 	const std::vector<xexLibrary_t>& GetLibraries() const {return libraries;}
@@ -97,6 +98,7 @@ private:
 
 	uint32_t baseAddress;
 	uint32_t entryPoint;
+	uint32_t stackSize;
 
 	uint32_t importBaseAddr;
 	

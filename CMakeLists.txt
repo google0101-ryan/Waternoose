@@ -9,7 +9,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(SOURCES src/memory/memory.cpp
 			src/main.cpp
-			src/loader/xex.cpp)
+			src/loader/xex.cpp
+			src/cpu/CPU.cpp
+			src/cpu/ops.cpp)
 
 set(AES_SOURCES src/crypto/rijndael-alg-fst.cpp)
 

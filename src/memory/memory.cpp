@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include <bitset>
+#include "memory.h"
 
 uint8_t** readPages, **writePages;
 #define PAGE_SIZE (4*1024)
@@ -30,28 +31,18 @@ void Memory::Dump()
 		file.write((char*)&data, 4);
 	}
 	file.close();
-}
 
-bool AddrIsUsed(uint32_t addr, uint32_t size)
-{
-	for (int i = addr; i < addr+size; i += PAGE_SIZE)
+	file.open("stack.dump");
+	for (uint32_t i = 0x70000000; i < 0x70040000; i += 4)
 	{
-		if (usedPages[i / PAGE_SIZE])
-		{
-			return true;
-		}
+		uint32_t data = bswap32(Read32(i));
+		file.write((char*)&data, 4);
 	}
-	return false;
+	file.close();
 }
 
 void *Memory::AllocMemory(uint32_t baseAddress, uint32_t size)
 {
-	if (AddrIsUsed(baseAddress, size))
-	{
-		printf("ERROR: Trying to map used memory!\n");
-		exit(1);
-	}
-
 	void* ret = mmap((void*)baseAddress, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
 	if (ret == MAP_FAILED)
@@ -125,9 +116,20 @@ void Memory::Write32(uint32_t addr, uint32_t data)
 {
 	if (!writePages[addr / PAGE_SIZE])
 	{
-		printf("Write to unmapped addr 0x%08x\n", addr);
+		printf("Write32 to unmapped addr 0x%08x\n", addr);
 		exit(1);
 	}
 
 	*(uint32_t*)&writePages[addr / PAGE_SIZE][addr % PAGE_SIZE] = bswap32(data);
+}
+
+void Memory::Write64(uint32_t addr, uint64_t data)
+{
+	if (!writePages[addr / PAGE_SIZE])
+	{
+		printf("Write64 to unmapped addr 0x%08x\n", addr);
+		exit(1);
+	}
+
+	*(uint64_t*)&writePages[addr / PAGE_SIZE][addr % PAGE_SIZE] = bswap64(data);
 }
