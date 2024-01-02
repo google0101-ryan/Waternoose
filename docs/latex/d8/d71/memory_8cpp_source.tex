@@ -1,0 +1,139 @@
+\hypertarget{memory_8cpp_source}{}\doxysection{memory.\+cpp}
+\label{memory_8cpp_source}\index{src/memory/memory.cpp@{src/memory/memory.cpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00001}00001 \textcolor{preprocessor}{\#include <memory/memory.h>}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00002}00002 \textcolor{preprocessor}{\#include <util.h>}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00003}00003 \textcolor{preprocessor}{\#include <stddef.h>}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00004}00004 \textcolor{preprocessor}{\#include <sys/mman.h>}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00005}00005 \textcolor{preprocessor}{\#include <stdio.h>}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00006}00006 \textcolor{preprocessor}{\#include <errno.h>}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00007}00007 \textcolor{preprocessor}{\#include <string.h>}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00008}00008 \textcolor{preprocessor}{\#include <stdlib.h>}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00009}00009 \textcolor{preprocessor}{\#include <fstream>}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00010}00010 \textcolor{preprocessor}{\#include <bitset>}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00011}00011 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00012}00012 uint8\_t** readPages, **writePages;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00013}00013 \textcolor{preprocessor}{\#define PAGE\_SIZE (4*1024)}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00014}00014 \textcolor{preprocessor}{\#define MAX\_ADDRESS\_SPACE UINT32\_MAX}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00015}00015 std::bitset<MAX\_ADDRESS\_SPACE / PAGE\_SIZE> usedPages;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00016}00016 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00017}00017 \textcolor{keywordtype}{void} Memory::Initialize()}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00018}00018 \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00019}00019     readPages = \textcolor{keyword}{new} uint8\_t*[MAX\_ADDRESS\_SPACE / PAGE\_SIZE];}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00020}00020     writePages = \textcolor{keyword}{new} uint8\_t*[MAX\_ADDRESS\_SPACE / PAGE\_SIZE];}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00021}00021     usedPages.reset();}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00022}00022 \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00023}00023 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00024}00024 \textcolor{keywordtype}{void} Memory::Dump()}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00025}00025 \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00026}00026     std::ofstream file(\textcolor{stringliteral}{"{}mem.dump"{}});}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00027}00027     \textcolor{keywordflow}{for} (uint32\_t i = 0x82000000; i < 0x82130000; i += 4)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00028}00028     \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00029}00029         uint32\_t data = bswap32(Read32(i));}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00030}00030         file.write((\textcolor{keywordtype}{char}*)\&data, 4);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00031}00031     \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00032}00032     file.close();}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00033}00033 \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00034}00034 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00035}00035 \textcolor{keywordtype}{bool} AddrIsUsed(uint32\_t addr, uint32\_t size)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00036}00036 \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00037}00037     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = addr; i < addr+size; i += PAGE\_SIZE)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00038}00038     \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00039}00039         \textcolor{keywordflow}{if} (usedPages[i / PAGE\_SIZE])}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00040}00040         \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00041}00041             \textcolor{keywordflow}{return} \textcolor{keyword}{true};}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00042}00042         \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00043}00043     \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00044}00044     \textcolor{keywordflow}{return} \textcolor{keyword}{false};}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00045}00045 \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00046}00046 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00047}00047 \textcolor{keywordtype}{void} *Memory::AllocMemory(uint32\_t baseAddress, uint32\_t size)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00048}00048 \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00049}00049     \textcolor{keywordflow}{if} (AddrIsUsed(baseAddress, size))}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00050}00050     \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00051}00051         printf(\textcolor{stringliteral}{"{}ERROR: Trying to map used memory!\(\backslash\)n"{}});}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00052}00052         exit(1);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00053}00053     \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00054}00054 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00055}00055     \textcolor{keywordtype}{void}* ret = mmap((\textcolor{keywordtype}{void}*)baseAddress, size, PROT\_READ | PROT\_WRITE, MAP\_ANONYMOUS | MAP\_PRIVATE, -\/1, 0);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00056}00056 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00057}00057     \textcolor{keywordflow}{if} (ret == MAP\_FAILED)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00058}00058     \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00059}00059         printf(\textcolor{stringliteral}{"{}Failed to allocate memory: \%s\(\backslash\)n"{}}, strerror(errno));}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00060}00060         exit(1);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00061}00061     \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00062}00062 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00063}00063     size = (size + PAGE\_SIZE) \& \string~PAGE\_SIZE;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00064}00064 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00065}00065     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < size; i += PAGE\_SIZE)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00066}00066     \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00067}00067         readPages[(baseAddress + i) / PAGE\_SIZE] = ((uint8\_t*)ret+i);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00068}00068         writePages[(baseAddress + i) / PAGE\_SIZE] = ((uint8\_t*)ret+i);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00069}00069     \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00070}00070 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00071}00071     \textcolor{keywordflow}{return} ret;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00072}00072 \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00073}00073 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00074}00074 uint32\_t Memory::VirtAllocMemoryRange(uint32\_t beginAddr, uint32\_t endAddr, uint32\_t size)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00075}00075 \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00076}00076     uint32\_t requiredPages = size / PAGE\_SIZE;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00077}00077 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00078}00078     \textcolor{comment}{// Find the lowest free range that fits the size}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00079}00079     uint32\_t candidate = 0;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00080}00080     uint32\_t freePages = 0;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00081}00081     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = beginAddr; i < endAddr; i += PAGE\_SIZE)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00082}00082     \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00083}00083         \textcolor{keywordflow}{if} (!candidate \&\& !usedPages[i / PAGE\_SIZE])}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00084}00084         \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00085}00085             candidate = i / PAGE\_SIZE;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00086}00086             freePages = 1;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00087}00087         \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00088}00088         \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (!usedPages[i / PAGE\_SIZE])}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00089}00089         \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00090}00090             freePages++;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00091}00091             \textcolor{keywordflow}{if} (freePages == requiredPages)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00092}00092                 \textcolor{keywordflow}{break};}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00093}00093         \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00094}00094         \textcolor{keywordflow}{else}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00095}00095         \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00096}00096             candidate = 0;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00097}00097         \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00098}00098     \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00099}00099 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00100}00100     \textcolor{keywordflow}{if} (candidate == 0)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00101}00101     \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00102}00102         printf(\textcolor{stringliteral}{"{}ERROR: Failed to allocate virtual memory in range [0x\%08x -\/> 0x\%08x]\(\backslash\)n"{}}, beginAddr, endAddr);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00103}00103         exit(1);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00104}00104     \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00105}00105 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00106}00106     \textcolor{comment}{// Mark the pages as used}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00107}00107     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < requiredPages; i++)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00108}00108         usedPages.set(candidate+i, \textcolor{keyword}{true});}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00109}00109     }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00110}00110     \textcolor{keywordflow}{return} candidate*PAGE\_SIZE;}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00111}00111 \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00112}00112 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00113}00113 uint32\_t Memory::Read32(uint32\_t addr)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00114}00114 \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00115}00115     \textcolor{keywordflow}{if} (!readPages[addr / PAGE\_SIZE])}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00116}00116     \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00117}00117         printf(\textcolor{stringliteral}{"{}Read from unmapped addr 0x\%08x\(\backslash\)n"{}}, addr);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00118}00118         exit(1);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00119}00119     \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00120}00120 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00121}00121     \textcolor{keywordflow}{return} bswap32(*(uint32\_t*)\&readPages[addr / PAGE\_SIZE][addr \% PAGE\_SIZE]);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00122}00122 \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00123}00123 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00124}00124 \textcolor{keywordtype}{void} Memory::Write32(uint32\_t addr, uint32\_t data)}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00125}00125 \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00126}00126     \textcolor{keywordflow}{if} (!writePages[addr / PAGE\_SIZE])}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00127}00127     \{}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00128}00128         printf(\textcolor{stringliteral}{"{}Write to unmapped addr 0x\%08x\(\backslash\)n"{}}, addr);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00129}00129         exit(1);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00130}00130     \}}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00131}00131 }
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00132}00132     *(uint32\_t*)\&writePages[addr / PAGE\_SIZE][addr \% PAGE\_SIZE] = bswap32(data);}
+\DoxyCodeLine{\Hypertarget{memory_8cpp_source_l00133}00133 \}}
+
+\end{DoxyCode}

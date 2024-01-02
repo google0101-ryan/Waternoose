@@ -1,0 +1,25 @@
+\hypertarget{memory_8h_source}{}\doxysection{memory.\+h}
+\label{memory_8h_source}\index{src/memory/memory.h@{src/memory/memory.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00001}00001 \textcolor{preprocessor}{\#pragma once}}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00002}00002 }
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00003}00003 \textcolor{preprocessor}{\#include <stdint.h>}}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00004}00004 }
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00005}00005 \textcolor{keyword}{namespace }Memory}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00006}00006 \{}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00007}00007 }
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00008}00008 \textcolor{keywordtype}{void} Initialize();}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00009}00009 \textcolor{keywordtype}{void} Dump();}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00010}00010 }
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00015}00015 \textcolor{keywordtype}{void}* AllocMemory(uint32\_t baseAddress, uint32\_t size);}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00016}00016 }
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00023}00023 uint32\_t VirtAllocMemoryRange(uint32\_t beginAddr, uint32\_t endAddr, uint32\_t size);}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00024}00024 }
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00025}00025 uint32\_t Read32(uint32\_t addr);}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00026}00026 }
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00027}00027 \textcolor{keywordtype}{void} Write32(uint32\_t addr, uint32\_t data);}
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00028}00028 }
+\DoxyCodeLine{\Hypertarget{memory_8h_source_l00029}00029 \}}
+
+\end{DoxyCode}

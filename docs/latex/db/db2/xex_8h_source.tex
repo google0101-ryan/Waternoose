@@ -1,0 +1,104 @@
+\hypertarget{xex_8h_source}{}\doxysection{xex.\+h}
+\label{xex_8h_source}\index{src/loader/xex.h@{src/loader/xex.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00001}00001 \textcolor{preprocessor}{\#pragma once}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00002}00002 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00003}00003 \textcolor{preprocessor}{\#include <stdint.h>}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00004}00004 \textcolor{preprocessor}{\#include <stddef.h>}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00005}00005 \textcolor{preprocessor}{\#include <vector>}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00006}00006 \textcolor{preprocessor}{\#include <string>}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00007}00007 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00009}\mbox{\hyperlink{structxexHeader__t}{00009}} \textcolor{keyword}{typedef} \textcolor{keyword}{struct}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00010}00010 \{}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00011}00011     \textcolor{keywordtype}{char} magic[4]; \textcolor{comment}{// "{}XEX2"{}}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00012}00012     uint32\_t module\_flags;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00013}00013     uint32\_t header\_size;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00014}00014     uint32\_t rsv0;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00015}00015     uint32\_t sec\_info\_offset;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00016}00016     uint32\_t optional\_header\_count;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00017}00017 \} \mbox{\hyperlink{structxexHeader__t}{xexHeader\_t}};}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00018}00018 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00020}\mbox{\hyperlink{structoptionalHeader__t}{00020}} \textcolor{keyword}{typedef} \textcolor{keyword}{struct}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00021}00021 \{}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00022}00022     uint32\_t id;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00023}00023     \textcolor{keyword}{union}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00024}00024     \{}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00025}00025         uint32\_t offset;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00026}00026         uint32\_t value;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00027}00027     \};}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00028}00028 \}  \mbox{\hyperlink{structoptionalHeader__t}{optionalHeader\_t}};}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00029}00029 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00030}\mbox{\hyperlink{structfileFormatInfo__t}{00030}} \textcolor{keyword}{typedef} \textcolor{keyword}{struct}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00031}00031 \{}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00032}00032     uint32\_t info\_size;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00033}00033     uint16\_t encryption\_type;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00034}00034     uint16\_t compression\_type;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00035}00035 \} \mbox{\hyperlink{structfileFormatInfo__t}{fileFormatInfo\_t}};}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00036}00036 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00037}\mbox{\hyperlink{structbasicCompression__t}{00037}} \textcolor{keyword}{typedef} \textcolor{keyword}{struct}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00038}00038 \{}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00039}00039     uint32\_t data\_size;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00040}00040     uint32\_t zero\_size;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00041}00041 \} \mbox{\hyperlink{structbasicCompression__t}{basicCompression\_t}};}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00042}00042 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00043}\mbox{\hyperlink{structimportHeader__t}{00043}} \textcolor{keyword}{typedef} \textcolor{keyword}{struct}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00044}00044 \{}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00045}00045     uint32\_t size;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00046}00046     \textcolor{keyword}{struct}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00047}00047     \{}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00048}00048         uint32\_t size;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00049}00049         uint32\_t count;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00050}00050     \} stringTable;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00051}00051 \} \mbox{\hyperlink{structimportHeader__t}{importHeader\_t}};}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00052}00052 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00053}\mbox{\hyperlink{structlibraryHeader__t}{00053}} \textcolor{keyword}{typedef} \textcolor{keyword}{struct}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00054}00054 \{}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00055}00055     uint32\_t size;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00056}00056     \textcolor{keywordtype}{char} next\_import\_digest[0x14];}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00057}00057     uint32\_t id;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00058}00058     uint32\_t version\_value;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00059}00059     uint32\_t version\_min\_value;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00060}00060     uint16\_t name\_index;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00061}00061     uint16\_t count;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00062}00062 \} \mbox{\hyperlink{structlibraryHeader__t}{libraryHeader\_t}};}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00063}00063 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00064}\mbox{\hyperlink{structxexLibrary__t}{00064}} \textcolor{keyword}{typedef} \textcolor{keyword}{struct}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00065}00065 \{}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00066}00066     \mbox{\hyperlink{structlibraryHeader__t}{libraryHeader\_t}} header;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00067}00067     std::vector<uint32\_t> imports;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00068}00068     std::string name;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00069}00069 \} \mbox{\hyperlink{structxexLibrary__t}{xexLibrary\_t}};}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00070}00070 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00071}\mbox{\hyperlink{classXexLoader}{00071}} \textcolor{keyword}{class }\mbox{\hyperlink{classXexLoader}{XexLoader}}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00072}00072 \{}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00073}00073 \textcolor{keyword}{public}:}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00077}00077     \mbox{\hyperlink{classXexLoader_a4110146a13eede83752a02033cc4da42}{XexLoader}}(uint8\_t* buffer, \textcolor{keywordtype}{size\_t} len);}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00078}00078 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00079}00079     uint32\_t GetEntryPoint() \textcolor{keyword}{const};}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00080}00080 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00082}\mbox{\hyperlink{classXexLoader_ad343ed531e6bcef90576191948cfa7ce}{00082}}     \textcolor{keyword}{const} std::vector<xexLibrary\_t>\& \mbox{\hyperlink{classXexLoader_ad343ed531e6bcef90576191948cfa7ce}{GetLibraries}}()\textcolor{keyword}{ const }\{\textcolor{keywordflow}{return} libraries;\}}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00083}00083 \textcolor{keyword}{private}:}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00084}00084     \textcolor{keywordtype}{void} ParseFileInfo(uint32\_t offset);}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00085}00085     \textcolor{keywordtype}{void} ParseLibraryInfo(uint32\_t offset, \mbox{\hyperlink{structxexLibrary__t}{xexLibrary\_t}}\& lib, \textcolor{keywordtype}{int} index);}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00086}00086 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00087}00087     \textcolor{keywordtype}{int} ReadImageBasicCompressed(uint8\_t* buffer, \textcolor{keywordtype}{size\_t} xex\_len, \textcolor{keywordtype}{char}** outBuffer);}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00088}00088 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00089}00089     \mbox{\hyperlink{structxexHeader__t}{xexHeader\_t}} header;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00090}00090 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00091}00091     uint8\_t* buffer;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00092}00092     uint8\_t session\_key[16];}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00093}00093 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00094}00094     uint16\_t compressionFormat, encryptionFormat;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00095}00095     uint32\_t fileInfoOffset = 0;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00096}00096     \mbox{\hyperlink{structfileFormatInfo__t}{fileFormatInfo\_t}} info;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00097}00097 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00098}00098     uint32\_t baseAddress;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00099}00099     uint32\_t entryPoint;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00100}00100 }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00101}00101     uint32\_t importBaseAddr;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00102}00102     }
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00103}00103     std::vector<xexLibrary\_t> libraries;}
+\DoxyCodeLine{\Hypertarget{xex_8h_source_l00104}00104 \};}
+
+\end{DoxyCode}

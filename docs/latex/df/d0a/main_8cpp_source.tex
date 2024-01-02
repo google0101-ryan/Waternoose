@@ -1,0 +1,39 @@
+\hypertarget{main_8cpp_source}{}\doxysection{main.\+cpp}
+\label{main_8cpp_source}\index{src/main.cpp@{src/main.cpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00001}00001 \textcolor{preprocessor}{\#include <loader/xex.h>}}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00002}00002 \textcolor{preprocessor}{\#include <memory/memory.h>}}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00003}00003 \textcolor{preprocessor}{\#include <cstdio>}}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00004}00004 \textcolor{preprocessor}{\#include <fstream>}}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00005}00005 }
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00006}00006 \textcolor{keywordtype}{int} main(\textcolor{keywordtype}{int} argc, \textcolor{keywordtype}{char}** argv)}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00007}00007 \{}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00008}00008     \textcolor{keywordflow}{if} (argc < 2)}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00009}00009     \{}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00010}00010         printf(\textcolor{stringliteral}{"{}Usage: \%s <xex name>\(\backslash\)n"{}}, argv[0]);}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00011}00011         \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00012}00012     \}}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00013}00013 }
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00014}00014     \textcolor{keywordtype}{char}* buf;}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00015}00015     \textcolor{keywordtype}{size\_t} size;}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00016}00016 }
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00017}00017     std::ifstream file(argv[1], std::ios::binary | std::ios::ate);}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00018}00018     size = file.tellg();}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00019}00019     file.seekg(0, std::ios::beg);}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00020}00020     buf = \textcolor{keyword}{new} \textcolor{keywordtype}{char}[size];}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00021}00021     file.read(buf, size);}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00022}00022     file.close();}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00023}00023 }
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00024}00024     Memory::Initialize();}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00025}00025 }
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00026}00026     \mbox{\hyperlink{classXexLoader}{XexLoader}} loader((uint8\_t*)buf, size);}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00027}00027 }
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00028}00028     printf(\textcolor{stringliteral}{"{}0x\%08x\(\backslash\)n"{}}, Memory::Read32(loader.GetEntryPoint()));}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00029}00029 }
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00030}00030     Memory::Dump();}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00031}00031 }
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00032}00032     \textcolor{keywordflow}{return} 0;}
+\DoxyCodeLine{\Hypertarget{main_8cpp_source_l00033}00033 \}}
+
+\end{DoxyCode}
