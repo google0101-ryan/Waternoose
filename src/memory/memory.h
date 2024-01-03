@@ -23,6 +23,7 @@ void* AllocMemory(uint32_t baseAddress, uint32_t size);
 uint32_t VirtAllocMemoryRange(uint32_t beginAddr, uint32_t endAddr, uint32_t size);
 
 uint32_t Read32(uint32_t addr);
+uint64_t Read64(uint32_t addr);
 
 void Write32(uint32_t addr, uint32_t data);
 void Write64(uint32_t addr, uint64_t data);

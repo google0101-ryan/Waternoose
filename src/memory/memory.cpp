@@ -8,7 +8,11 @@
 #include <stdlib.h>
 #include <fstream>
 #include <bitset>
+#include <loader/xex.h>
+#include <cpu/CPU.h>
 #include "memory.h"
+
+extern uint32_t mainThreadStackSize;
 
 uint8_t** readPages, **writePages;
 #define PAGE_SIZE (4*1024)
@@ -25,7 +29,7 @@ void Memory::Initialize()
 void Memory::Dump()
 {
 	std::ofstream file("mem.dump");
-	for (uint32_t i = 0x82000000; i < 0x82130000; i += 4)
+	for (uint32_t i = mainXexBase; i < mainXexBase+mainXexSize; i += 4)
 	{
 		uint32_t data = bswap32(Read32(i));
 		file.write((char*)&data, 4);
@@ -33,7 +37,7 @@ void Memory::Dump()
 	file.close();
 
 	file.open("stack.dump");
-	for (uint32_t i = 0x70000000; i < 0x70040000; i += 4)
+	for (uint32_t i = 0x70000000; i < 0x70000000+mainThreadStackSize; i += 4)
 	{
 		uint32_t data = bswap32(Read32(i));
 		file.write((char*)&data, 4);
@@ -110,6 +114,17 @@ uint32_t Memory::Read32(uint32_t addr)
 	}
 
 	return bswap32(*(uint32_t*)&readPages[addr / PAGE_SIZE][addr % PAGE_SIZE]);
+}
+
+uint64_t Memory::Read64(uint32_t addr)
+{
+	if (!readPages[addr / PAGE_SIZE])
+	{
+		printf("Read64 from unmapped addr 0x%08x\n", addr);
+		exit(1);
+	}
+
+	return bswap64(*(uint64_t*)&readPages[addr / PAGE_SIZE][addr % PAGE_SIZE]);
 }
 
 void Memory::Write32(uint32_t addr, uint32_t data)

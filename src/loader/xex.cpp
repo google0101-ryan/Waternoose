@@ -8,6 +8,9 @@
 #include <crypto/rijndael-alg-fst.h>
 #include <memory/memory.h>
 #include <util.h>
+#include <loader/lzx.h>
+
+uint32_t mainXexBase, mainXexSize;
 
 // Am I allowed to have this here? 
 // Xenia gets away with it, I'm sure it's fine
@@ -68,6 +71,8 @@ XexLoader::XexLoader(uint8_t *buffer, size_t len)
 		optHeaders.push_back(opt);
 	}
 
+	mainXexSize = image_size();
+
 	// Parse security info, including AES key decryption
 	uint8_t* aes_key = (buffer+header.sec_info_offset+336);
 	aes_decrypt_buffer(xe_xex2_retail_key, aes_key, 16, session_key, 16);
@@ -97,6 +102,7 @@ XexLoader::XexLoader(uint8_t *buffer, size_t len)
 			break;
 		case 0x10201:
 			baseAddress = hdr.value;
+			mainXexBase = baseAddress;
 			printf("Image base is 0x%08x\n", baseAddress);
 			break;
 		case 0x103FF:
@@ -112,9 +118,21 @@ XexLoader::XexLoader(uint8_t *buffer, size_t len)
 	}
 
 	// Decrypt/decompress the file
-	assert(encryptionFormat == 1 && compressionFormat == 1);
+	printf("%d, %d\n", encryptionFormat, compressionFormat);
 	char* outBuffer;
-	auto uncompressedSize = ReadImageBasicCompressed(buffer, len, &outBuffer);
+	uint32_t uncompressedSize;
+	switch (compressionFormat)
+	{
+	case 1:
+		uncompressedSize = ReadImageBasicCompressed(buffer, len, &outBuffer);
+		break;
+	case 2:
+		uncompressedSize = ReadImageCompressed(buffer, len, &outBuffer);
+		break;
+	default:
+		printf("Unknown compression format %d\n", compressionFormat);
+		exit(1);
+	}
 
 	std::ofstream out("out.pe");
 	out.write(outBuffer, uncompressedSize);
@@ -272,4 +290,107 @@ int XexLoader::ReadImageBasicCompressed(uint8_t *buffer, size_t xex_len, char** 
 	}
 
 	return uncompressedSize;
+}
+
+int XexLoader::ReadImageCompressed(uint8_t *buffer, size_t xex_len, char **outBuffer)
+{
+	const uint32_t exe_length = (uint32_t)(xex_len - header.header_size);
+	const uint8_t* exe_buffer = (const uint8_t*)(buffer + header.header_size);
+
+	uint8_t* compress_buffer = NULL;
+	const uint8_t* p = NULL;
+	uint8_t* d = NULL;
+
+	bool free_input = false;
+	const uint8_t* input_buffer = exe_buffer;
+	size_t input_size = exe_length;
+
+	switch (encryptionFormat)
+	{
+	case 0:
+		break;
+	case 1:
+		free_input = true;
+		input_buffer = (const uint8_t*)calloc(1, exe_length);
+		aes_decrypt_buffer(session_key, exe_buffer, exe_length, (uint8_t*)input_buffer, exe_length);
+		break;
+	}
+
+	normalCompressionHeader_t hdr = *(normalCompressionHeader_t*)(buffer + fileInfoOffset + sizeof(fileFormatInfo_t));
+	hdr.windowSize = bswap32(hdr.windowSize);
+	hdr.firstBlock.blockSize = bswap32(hdr.firstBlock.blockSize);
+
+	normalCompressionBlock_t curBlock = hdr.firstBlock;
+
+	compress_buffer = (uint8_t*)calloc(1, exe_length);
+
+	p = input_buffer;
+	d = compress_buffer;
+
+	int result_code = 0;
+
+	uint32_t blockOffs = sizeof(normalCompressionBlock_t);
+	while (curBlock.blockSize)
+	{
+		const uint8_t* pnext = p + curBlock.blockSize;
+		normalCompressionBlock_t next_block = *(normalCompressionBlock_t*)p;
+		blockOffs += sizeof(normalCompressionBlock_t);
+
+		next_block.blockSize = bswap32(next_block.blockSize);
+
+		p += 4;
+		p += 20;
+
+		while (true)
+		{
+			const size_t chunk_size = (p[0] << 8) | p[1];
+			p += 2;
+			if (!chunk_size)
+				break;
+			
+			memcpy(d, p, chunk_size);
+			p += chunk_size;
+			d += chunk_size;
+		}
+
+		p = pnext;
+		curBlock = next_block;
+	}
+
+	uint32_t uncompressed_size = image_size();
+	char* out = new char[uncompressed_size];
+
+	(*outBuffer) = out;
+
+	if (!result_code)
+	{
+		std::memset(out, 0, uncompressed_size);
+
+		result_code = lzx_decompress(compress_buffer, d - compress_buffer, out, uncompressed_size,
+          hdr.windowSize, nullptr, 0);
+	}
+
+	if (compress_buffer)
+		free((void*)compress_buffer);
+	if (free_input)
+		free((void*)input_buffer);
+	return uncompressed_size;
+}
+
+uint32_t XexLoader::image_size()
+{
+	uint32_t pageDescriptorCount = bswap32(*(uint32_t*)&buffer[header.sec_info_offset + 0x180]);
+
+	uint32_t totalSize = 0;
+
+	for (int i = 0; i < pageDescriptorCount; i++)
+	{
+		uint32_t offs = header.sec_info_offset + 0x184 + (i * 0x18);
+		pageDescriptor_t page = *(pageDescriptor_t*)&buffer[offs];
+		page.value = bswap32(page.value);
+		
+		totalSize += page.value * 4096;
+	}
+
+	return totalSize;
 }

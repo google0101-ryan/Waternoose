@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <cassert>
+#include "CPU.h"
 
 CPUThread::CPUThread(uint32_t entryPoint, uint32_t stackSize)
 {
@@ -30,7 +32,23 @@ void CPUThread::Run()
 
 	printf("0x%08x (0x%08lx): ", instr, state.pc-4);
 	
-	if (((instr >> 26) & 0x3F) == 18)
+	if (((instr >> 26) & 0x3F) == 10)
+	{
+		cmpli(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 14)
+	{
+		addi(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 15)
+	{
+		addis(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 16)
+	{
+		bc(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 18)
 	{
 		branch(instr);
 	}
@@ -38,13 +56,41 @@ void CPUThread::Run()
 	{
 		bclr(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 21)
+	{
+		rlwinm(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 24)
+	{
+		ori(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 339)
 	{	
 		mfspr(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 444)
+	{	
+		or_(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 467)
+	{	
+		mtspr(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 32)
+	{
+		lwz(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 36)
 	{
 		stw(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 37)
+	{
+		stwu(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 58)
+	{
+		ld(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 62)
 	{
@@ -55,6 +101,21 @@ void CPUThread::Run()
 		printf("Failed to execute instruction: 0x%08x\n", instr);
 		exit(1);
 	}
+}
+
+void CPUThread::Dump()
+{
+	for (int i = 0; i < 32; i++)
+		printf("r%d\t->\t0x%08lx\n", i, state.regs[i]);
+	for (int i = 0; i < 7; i++)
+		printf("cr%d\t->\t%d\n", i, state.GetCR(i));
+}
+
+void CPUThread::SetArg(int num, uint64_t value)
+{
+	printf("Setting arg%d: 0x%08lx\n", num, value);
+	assert(num < 6);
+	state.regs[3 + num] = value;
 }
 
 uint8_t GetCRBit(const uint32_t bit) { return 1 << (3 - (bit % 4)); }

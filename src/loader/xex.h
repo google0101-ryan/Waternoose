@@ -42,6 +42,18 @@ typedef struct
 
 typedef struct
 {
+	uint32_t blockSize;
+	uint8_t blockHash[20];
+} normalCompressionBlock_t;
+
+typedef struct
+{
+	uint32_t windowSize;
+	normalCompressionBlock_t firstBlock;
+} normalCompressionHeader_t;
+
+typedef struct
+{
 	uint32_t size;
 	struct
 	{
@@ -49,6 +61,20 @@ typedef struct
 		uint32_t count;
 	} stringTable;
 } importHeader_t;
+
+typedef struct
+{
+	union
+	{
+		uint32_t value;
+		struct
+		{
+			uint32_t info : 4;
+			uint32_t page_count : 28;
+		};
+	};
+	char data_digest[0x14];
+} pageDescriptor_t;
 
 typedef struct
 {
@@ -68,6 +94,8 @@ typedef struct
 	std::string name;
 } xexLibrary_t;
 
+extern uint32_t mainXexBase, mainXexSize;
+
 class XexLoader
 {
 public:
@@ -86,6 +114,7 @@ private:
 	void ParseLibraryInfo(uint32_t offset, xexLibrary_t& lib, int index);
 
 	int ReadImageBasicCompressed(uint8_t* buffer, size_t xex_len, char** outBuffer);
+	int ReadImageCompressed(uint8_t* buffer, size_t xex_len, char** outBuffer);
 
 	xexHeader_t header;
 
@@ -98,9 +127,11 @@ private:
 
 	uint32_t baseAddress;
 	uint32_t entryPoint;
-	uint32_t stackSize;
+	uint32_t stackSize = 1024*1024;
 
 	uint32_t importBaseAddr;
 	
 	std::vector<xexLibrary_t> libraries;
+
+	uint32_t image_size();
 };

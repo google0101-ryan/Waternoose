@@ -4,6 +4,14 @@
 #include <cstdio>
 #include <fstream>
 
+CPUThread* mainThread;
+uint32_t mainThreadStackSize;
+
+void atexit_handler()
+{
+	mainThread->Dump();
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
@@ -12,10 +20,20 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
+	char* xam_buf;
+	size_t xam_size;
+
+	std::ifstream file("xam.xex", std::ios::binary | std::ios::ate);
+	xam_size = file.tellg();
+	file.seekg(0, std::ios::beg);
+	xam_buf = new char[xam_size];
+	file.read(xam_buf, xam_size);
+	file.close();
+
 	char* buf;
 	size_t size;
 
-	std::ifstream file(argv[1], std::ios::binary | std::ios::ate);
+	file.open(argv[1], std::ios::binary | std::ios::ate);
 	size = file.tellg();
 	file.seekg(0, std::ios::beg);
 	buf = new char[size];
@@ -26,14 +44,23 @@ int main(int argc, char** argv)
 
 	std::atexit(Memory::Dump);
 
-	XexLoader loader((uint8_t*)buf, size);
+	XexLoader xam((uint8_t*)xam_buf, xam_size);
+	// XexLoader loader((uint8_t*)buf, size);
 	
-	CPUThread mainThread(loader.GetEntryPoint(), loader.GetStackSize());
+	mainThreadStackSize = xam.GetStackSize();
+	mainThread = new CPUThread(xam.GetEntryPoint(), xam.GetStackSize());
+	mainThread->SetArg(0, 0xBCBCBCBC);
+	mainThread->SetArg(1, 1);
+	mainThread->SetArg(2, 0);
+
+	std::atexit(atexit_handler);
 
 	while (1)
 	{
-		mainThread.Run();
+	 	mainThread->Run();
 	}
+
+	delete mainThread;
 
 	return 0;
 }
