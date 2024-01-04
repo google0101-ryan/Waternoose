@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['optionalheader_5ft_0',['optionalHeader_t',['../db/da1/structoptionalHeader__t.html',1,'']]]
+  ['mspackmemoryfile_5ft_0',['mspackMemoryFile_t',['../d7/d68/structmspackMemoryFile__t.html',1,'']]]
 ];
