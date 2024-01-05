@@ -6,7 +6,8 @@
 #include <cassert>
 #include "CPU.h"
 
-CPUThread::CPUThread(uint32_t entryPoint, uint32_t stackSize)
+CPUThread::CPUThread(uint32_t entryPoint, uint32_t stackSize, XexLoader& ref)
+: xexRef(ref)
 {
 	std::memset(&state, 0, sizeof(state));
 
@@ -31,10 +32,22 @@ void CPUThread::Run()
 	state.pc += 4;
 
 	printf("0x%08x (0x%08lx): ", instr, state.pc-4);
-	
-	if (((instr >> 26) & 0x3F) == 10)
+
+	if (((instr >> 26) & 0x3F) == 7)
+	{
+		mulli(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 10)
 	{
 		cmpli(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 11)
+	{
+		cmpi(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 12)
+	{
+		addic(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 14)
 	{
@@ -48,6 +61,10 @@ void CPUThread::Run()
 	{
 		bc(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 17)
+	{
+		sc(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 18)
 	{
 		branch(instr);
@@ -56,6 +73,10 @@ void CPUThread::Run()
 	{
 		bclr(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 20)
+	{
+		rlwimi(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 21)
 	{
 		rlwinm(instr);
@@ -63,6 +84,30 @@ void CPUThread::Run()
 	else if (((instr >> 26) & 0x3F) == 24)
 	{
 		ori(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 20)
+	{	
+		lwarx(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 83)
+	{	
+		mfmsr(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 136)
+	{	
+		subfe(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 150)
+	{	
+		stwcx(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 178)
+	{	
+		mtmsrd(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 266)
+	{	
+		add(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 339)
 	{	
@@ -80,6 +125,10 @@ void CPUThread::Run()
 	{
 		lwz(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 34)
+	{
+		lbz(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 36)
 	{
 		stw(instr);
@@ -87,6 +136,14 @@ void CPUThread::Run()
 	else if (((instr >> 26) & 0x3F) == 37)
 	{
 		stwu(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 38)
+	{
+		stb(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 44)
+	{
+		sth(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 58)
 	{
@@ -109,6 +166,7 @@ void CPUThread::Dump()
 		printf("r%d\t->\t0x%08lx\n", i, state.regs[i]);
 	for (int i = 0; i < 7; i++)
 		printf("cr%d\t->\t%d\n", i, state.GetCR(i));
+	printf("[%s]\n", state.xer.ca ? "c" : ".");
 }
 
 void CPUThread::SetArg(int num, uint64_t value)

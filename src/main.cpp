@@ -3,6 +3,9 @@
 #include <cpu/CPU.h>
 #include <cstdio>
 #include <fstream>
+#include <kernel/kernel.h>
+#include <kernel/modules/xboxkrnl.h>
+#include <vfs/VFS.h>
 
 CPUThread* mainThread;
 uint32_t mainThreadStackSize;
@@ -40,7 +43,12 @@ int main(int argc, char** argv)
 	file.read(buf, size);
 	file.close();
 
+	VFS::SetRootDirectory(".waternoose");
+	VFS::MountDirectory("/SystemRoot", "SystemRoot");
+
 	Memory::Initialize();
+
+	krnlModule.Initialize();
 
 	std::atexit(Memory::Dump);
 
@@ -48,7 +56,7 @@ int main(int argc, char** argv)
 	// XexLoader loader((uint8_t*)buf, size);
 	
 	mainThreadStackSize = xam.GetStackSize();
-	mainThread = new CPUThread(xam.GetEntryPoint(), xam.GetStackSize());
+	mainThread = new CPUThread(xam.GetEntryPoint(), xam.GetStackSize(), xam);
 	mainThread->SetArg(0, 0xBCBCBCBC);
 	mainThread->SetArg(1, 1);
 	mainThread->SetArg(2, 0);

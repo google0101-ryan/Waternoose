@@ -12,7 +12,10 @@ set(SOURCES src/memory/memory.cpp
 			src/main.cpp
 			src/loader/xex.cpp
 			src/cpu/CPU.cpp
-			src/cpu/ops.cpp)
+			src/cpu/ops.cpp
+			src/kernel/kernel.cpp
+			src/kernel/modules/xboxkrnl.cpp
+			src/vfs/VFS.cpp)
 
 set(AES_SOURCES src/crypto/rijndael-alg-fst.cpp)
 set(LZX_SOURCES src/thirdparty/lzxd.cpp

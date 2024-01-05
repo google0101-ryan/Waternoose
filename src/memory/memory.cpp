@@ -16,7 +16,7 @@ extern uint32_t mainThreadStackSize;
 
 uint8_t** readPages, **writePages;
 #define PAGE_SIZE (4*1024)
-#define MAX_ADDRESS_SPACE UINT32_MAX
+#define MAX_ADDRESS_SPACE 0xB0000000
 std::bitset<MAX_ADDRESS_SPACE / PAGE_SIZE> usedPages;
 
 void Memory::Initialize()
@@ -73,7 +73,7 @@ uint32_t Memory::VirtAllocMemoryRange(uint32_t beginAddr, uint32_t endAddr, uint
 	// Find the lowest free range that fits the size
 	uint32_t candidate = 0;
 	uint32_t freePages = 0;
-	for (int i = beginAddr; i < endAddr; i += PAGE_SIZE)
+	for (uint32_t i = beginAddr; i < endAddr; i += PAGE_SIZE)
 	{
 		if (!candidate && !usedPages[i / PAGE_SIZE])
 		{
@@ -105,6 +105,28 @@ uint32_t Memory::VirtAllocMemoryRange(uint32_t beginAddr, uint32_t endAddr, uint
 	return candidate*PAGE_SIZE;
 }
 
+uint8_t *Memory::GetRawPtrForAddr(uint32_t addr)
+{
+	if (!readPages[addr / PAGE_SIZE])
+	{
+		printf("Read raw ptr from unmapped addr 0x%08x\n", addr);
+		exit(1);
+	}
+
+	return &readPages[addr / PAGE_SIZE][addr % PAGE_SIZE];
+}
+
+uint8_t Memory::Read8(uint32_t addr)
+{
+	if (!readPages[addr / PAGE_SIZE])
+	{
+		printf("Read8 from unmapped addr 0x%08x\n", addr);
+		exit(1);
+	}
+
+	return readPages[addr / PAGE_SIZE][addr % PAGE_SIZE];
+}
+
 uint32_t Memory::Read32(uint32_t addr)
 {
 	if (!readPages[addr / PAGE_SIZE])
@@ -125,6 +147,28 @@ uint64_t Memory::Read64(uint32_t addr)
 	}
 
 	return bswap64(*(uint64_t*)&readPages[addr / PAGE_SIZE][addr % PAGE_SIZE]);
+}
+
+void Memory::Write8(uint32_t addr, uint8_t data)
+{
+	if (!writePages[addr / PAGE_SIZE])
+	{
+		printf("Write8 to unmapped addr 0x%08x\n", addr);
+		exit(1);
+	}
+
+	writePages[addr / PAGE_SIZE][addr % PAGE_SIZE] = data;
+}
+
+void Memory::Write16(uint32_t addr, uint16_t data)
+{
+	if (!writePages[addr / PAGE_SIZE])
+	{
+		printf("Write16 to unmapped addr 0x%08x\n", addr);
+		exit(1);
+	}
+
+	*(uint16_t*)&writePages[addr / PAGE_SIZE][addr % PAGE_SIZE] = bswap16(data);
 }
 
 void Memory::Write32(uint32_t addr, uint32_t data)

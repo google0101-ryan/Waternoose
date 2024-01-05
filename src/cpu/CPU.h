@@ -5,6 +5,7 @@
 #include <cstdlib>
 
 #include <types.h>
+#include <loader/xex.h>
 
 /// @brief Contains most of the CPU state, including registers, SPRs, etc. 
 /// We declare this in a struct so the scheduler can access it to save/restore CPU state on a context switch
@@ -14,6 +15,7 @@ typedef struct
 	uint64_t regs[32]; // These are mostly accessed as single uint32_t registers
 	uint64_t ctr;
 	uint64_t lr;
+	uint64_t msr;
 
 	struct
 	{
@@ -70,6 +72,11 @@ typedef struct
 		else if (x > y) SetCR(num, 0x4);
 		else SetCR(num, 0x2);
 	}
+
+	struct XER
+	{
+		bool ca;
+	} xer;
 } cpuState_t;
 
 /// @brief This will represent one of 6 hardware threads running at a time. 
@@ -79,31 +86,50 @@ typedef struct
 class CPUThread
 {
 public:
-	CPUThread(uint32_t entryPoint, uint32_t stackSize);
+	CPUThread(uint32_t entryPoint, uint32_t stackSize, XexLoader& ref);
 
 	void Run();
 	void Dump();
 
 	void SetArg(int num, uint64_t value);
+
+	cpuState_t& GetState() {return state;}
 private:
+	void mulli(uint32_t instruction); // 7
 	void cmpli(uint32_t instruction); // 10
+	void cmpi(uint32_t instruction); // 11
+	void addic(uint32_t instruction); // 12
 	void addi(uint32_t instruction); // 14
 	void addis(uint32_t instruction); // 15
 	void bc(uint32_t instruction); // 16
+	void sc(uint32_t instruction); // 17
 	void branch(uint32_t instruction); // 18
 	void bclr(uint32_t instruction); // 19 16
+	void rlwimi(uint32_t instruction); // 20
 	void rlwinm(uint32_t instruction); // 21
 	void ori(uint32_t instruction); // 24
+	void lwarx(uint32_t instruction); // 31 20
+	void cmpl(uint32_t instruction); // 31 
+	void mfmsr(uint32_t instruction); // 31 83
+	void subfe(uint32_t instruction); // 31 136
+	void stwcx(uint32_t instruction); // 31 150
+	void mtmsrd(uint32_t instruction); // 31 178
+	void add(uint32_t instruction); // 31 266
 	void mfspr(uint32_t instruction); // 31 339
 	void or_(uint32_t instruction); // 31 444
 	void mtspr(uint32_t instruction); // 31 467
 	void lwz(uint32_t instruction); // 32
+	void lbz(uint32_t instruction); // 34
 	void stw(uint32_t instruction); // 36
 	void stwu(uint32_t instruction); // 37
+	void stb(uint32_t instruction); // 38
+	void sth(uint32_t instruction); // 44
 	void ld(uint32_t instruction); // 58
 	void std(uint32_t instruction); // 62
 private:
 	bool CondPassed(uint8_t bo, uint8_t bi);
 private:
 	cpuState_t state;
+
+	XexLoader& xexRef;
 };

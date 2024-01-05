@@ -109,6 +109,7 @@ public:
 
 	/// @brief Get the list of libraries imported by the .xex file
 	const std::vector<xexLibrary_t>& GetLibraries() const {return libraries;}
+	size_t GetLibraryIndexByName(const char* name) const;
 private:
 	void ParseFileInfo(uint32_t offset);
 	void ParseLibraryInfo(uint32_t offset, xexLibrary_t& lib, int index);

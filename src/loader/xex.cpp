@@ -205,6 +205,17 @@ uint32_t XexLoader::GetStackSize() const
 	return stackSize;
 }
 
+size_t XexLoader::GetLibraryIndexByName(const char *name) const
+{
+	for (int i = 0; i < libraries.size(); i++)
+	{
+		auto& lib = libraries[i];
+		if (lib.name == name)
+			return i;
+	}
+	return SIZE_MAX;
+}
+
 void XexLoader::ParseFileInfo(uint32_t offset)
 {
 	fileFormatInfo_t fileInfo = *(fileFormatInfo_t*)&buffer[offset];
