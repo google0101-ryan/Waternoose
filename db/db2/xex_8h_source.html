@@ -210,32 +210,33 @@ $(function() { codefold.init(1); });
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    uint32_t GetStackSize() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno"><a class="line" href="../../d8/dc6/classXexLoader.html#ad343ed531e6bcef90576191948cfa7ce">  111</a></span>    <span class="keyword">const</span> std::vector&lt;xexLibrary_t&gt;&amp; <a class="code hl_function" href="../../d8/dc6/classXexLoader.html#ad343ed531e6bcef90576191948cfa7ce">GetLibraries</a>()<span class="keyword"> const </span>{<span class="keywordflow">return</span> libraries;}</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="keywordtype">void</span> ParseFileInfo(uint32_t offset);</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    <span class="keywordtype">void</span> ParseLibraryInfo(uint32_t offset, <a class="code hl_struct" href="../../db/d39/structxexLibrary__t.html">xexLibrary_t</a>&amp; lib, <span class="keywordtype">int</span> index);</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    <span class="keywordtype">int</span> ReadImageBasicCompressed(uint8_t* buffer, <span class="keywordtype">size_t</span> xex_len, <span class="keywordtype">char</span>** outBuffer);</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    <span class="keywordtype">int</span> ReadImageCompressed(uint8_t* buffer, <span class="keywordtype">size_t</span> xex_len, <span class="keywordtype">char</span>** outBuffer);</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    <a class="code hl_struct" href="../../d1/d78/structxexHeader__t.html">xexHeader_t</a> header;</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    uint8_t* buffer;</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    uint8_t session_key[16];</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    uint16_t compressionFormat, encryptionFormat;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    uint32_t fileInfoOffset = 0;</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    <a class="code hl_struct" href="../../d2/dad/structfileFormatInfo__t.html">fileFormatInfo_t</a> info;</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>    uint32_t baseAddress;</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    uint32_t entryPoint;</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    uint32_t stackSize = 1024*1024;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>    uint32_t importBaseAddr;</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    </div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    std::vector&lt;xexLibrary_t&gt; libraries;</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>    uint32_t image_size();</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>};</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    <span class="keywordtype">size_t</span> GetLibraryIndexByName(<span class="keyword">const</span> <span class="keywordtype">char</span>* name) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    <span class="keywordtype">void</span> ParseFileInfo(uint32_t offset);</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    <span class="keywordtype">void</span> ParseLibraryInfo(uint32_t offset, <a class="code hl_struct" href="../../db/d39/structxexLibrary__t.html">xexLibrary_t</a>&amp; lib, <span class="keywordtype">int</span> index);</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    <span class="keywordtype">int</span> ReadImageBasicCompressed(uint8_t* buffer, <span class="keywordtype">size_t</span> xex_len, <span class="keywordtype">char</span>** outBuffer);</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    <span class="keywordtype">int</span> ReadImageCompressed(uint8_t* buffer, <span class="keywordtype">size_t</span> xex_len, <span class="keywordtype">char</span>** outBuffer);</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    <a class="code hl_struct" href="../../d1/d78/structxexHeader__t.html">xexHeader_t</a> header;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    uint8_t* buffer;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    uint8_t session_key[16];</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    uint16_t compressionFormat, encryptionFormat;</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    uint32_t fileInfoOffset = 0;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    <a class="code hl_struct" href="../../d2/dad/structfileFormatInfo__t.html">fileFormatInfo_t</a> info;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    uint32_t baseAddress;</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    uint32_t entryPoint;</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    uint32_t stackSize = 1024*1024;</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    uint32_t importBaseAddr;</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    </div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    std::vector&lt;xexLibrary_t&gt; libraries;</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span> </div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>    uint32_t image_size();</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>};</div>
 </div>
 <div class="ttc" id="aclassXexLoader_html"><div class="ttname"><a href="../../d8/dc6/classXexLoader.html">XexLoader</a></div><div class="ttdef"><b>Definition</b> <a href="#l00099">xex.h:100</a></div></div>
 <div class="ttc" id="aclassXexLoader_html_a4110146a13eede83752a02033cc4da42"><div class="ttname"><a href="../../d8/dc6/classXexLoader.html#a4110146a13eede83752a02033cc4da42">XexLoader::XexLoader</a></div><div class="ttdeci">XexLoader(uint8_t *buffer, size_t len)</div><div class="ttdoc">Loads a .xex file from a buffer into memory.</div><div class="ttdef"><b>Definition</b> <a href="../../d5/d16/xex_8cpp_source.html#l00041">xex.cpp:41</a></div></div>

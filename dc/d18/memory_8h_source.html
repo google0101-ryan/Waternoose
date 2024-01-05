@@ -98,13 +98,18 @@ $(function() { codefold.init(1); });
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>uint32_t VirtAllocMemoryRange(uint32_t beginAddr, uint32_t endAddr, uint32_t size);</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>uint32_t Read32(uint32_t addr);</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>uint64_t Read64(uint32_t addr);</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keywordtype">void</span> Write32(uint32_t addr, uint32_t data);</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keywordtype">void</span> Write64(uint32_t addr, uint64_t data);</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>uint8_t* GetRawPtrForAddr(uint32_t addr);</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>uint8_t Read8(uint32_t addr);</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>uint32_t Read32(uint32_t addr);</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>uint64_t Read64(uint32_t addr);</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>}</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="keywordtype">void</span> Write8(uint32_t addr, uint8_t data);</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keywordtype">void</span> Write16(uint32_t addr, uint16_t data);</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keywordtype">void</span> Write32(uint32_t addr, uint32_t data);</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keywordtype">void</span> Write64(uint32_t addr, uint64_t data);</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>}</div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
