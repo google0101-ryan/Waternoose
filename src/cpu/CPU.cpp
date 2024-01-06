@@ -1,5 +1,6 @@
 #include <cpu/CPU.h>
 #include <memory/memory.h>
+#include <loader/xex.h>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -21,9 +22,22 @@ CPUThread::CPUThread(uint32_t entryPoint, uint32_t stackSize, XexLoader& ref)
 	uint32_t stackBase = Memory::VirtAllocMemoryRange(0x70000000, 0x7F000000, stackSize);
 	Memory::AllocMemory(stackBase, stackSize);
 
+	uint32_t pcrAddress = Memory::VirtAllocMemoryRange(0xE0000000, 0xFFD00000, 0x2D8);
+	Memory::AllocMemory(pcrAddress, 0x2D8);
+
+	uint32_t tlsAddr = Memory::VirtAllocMemoryRange(0xE0000000, 0xFFD00000, 4096);
+	Memory::AllocMemory(tlsAddr, 4096);
+
+	uint32_t xthreadAddr = Memory::VirtAllocMemoryRange(0xE0000000, 0xFFD00000, 4096);
+	Memory::AllocMemory(xthreadAddr, 4096);
+
+	Memory::Write32(pcrAddress+0x00, tlsAddr);
+	Memory::Write32(pcrAddress+0x100, xthreadAddr);
+
 	printf("Stack base is 0x%08x\n", stackBase);
 
 	state.regs[1] = (stackBase+stackSize);
+	state.regs[13] = pcrAddress;
 }
 
 void CPUThread::Run()
@@ -33,9 +47,17 @@ void CPUThread::Run()
 
 	printf("0x%08x (0x%08lx): ", instr, state.pc-4);
 
-	if (((instr >> 26) & 0x3F) == 7)
+	if (((instr >> 26) & 0x3F) == 3)
+	{
+		twi(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 7)
 	{
 		mulli(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 8)
+	{
+		subfic(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 10)
 	{
@@ -85,9 +107,29 @@ void CPUThread::Run()
 	{
 		ori(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 28)
+	{
+		andi(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 20)
 	{	
 		lwarx(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 23)
+	{	
+		lwzx(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 32)
+	{	
+		cmpl(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 40)
+	{	
+		subf(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 60)
+	{	
+		andc(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 83)
 	{	
@@ -105,17 +147,37 @@ void CPUThread::Run()
 	{	
 		mtmsrd(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 235)
+	{	
+		mullw(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 246)
+	{	
+		dcbt(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 266)
 	{	
 		add(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 278)
+	{	
+		dcbt(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 339)
 	{	
 		mfspr(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 371)
+	{	
+		mftb(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 444)
 	{	
 		or_(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 459)
+	{	
+		divwu(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 467)
 	{	
@@ -140,6 +202,10 @@ void CPUThread::Run()
 	else if (((instr >> 26) & 0x3F) == 38)
 	{
 		stb(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 40)
+	{
+		lhz(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 44)
 	{

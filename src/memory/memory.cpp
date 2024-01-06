@@ -16,7 +16,7 @@ extern uint32_t mainThreadStackSize;
 
 uint8_t** readPages, **writePages;
 #define PAGE_SIZE (4*1024)
-#define MAX_ADDRESS_SPACE 0xB0000000
+#define MAX_ADDRESS_SPACE 0xFFFF0000
 std::bitset<MAX_ADDRESS_SPACE / PAGE_SIZE> usedPages;
 
 void Memory::Initialize()
@@ -127,15 +127,61 @@ uint8_t Memory::Read8(uint32_t addr)
 	return readPages[addr / PAGE_SIZE][addr % PAGE_SIZE];
 }
 
-uint32_t Memory::Read32(uint32_t addr)
+uint16_t Memory::Read16(uint32_t addr, bool slow)
 {
-	if (!readPages[addr / PAGE_SIZE])
+	if (!slow)
 	{
-		printf("Read from unmapped addr 0x%08x\n", addr);
-		exit(1);
-	}
+		if (!readPages[addr / PAGE_SIZE])
+		{
+			return Read16(addr, true);
+		}
 
-	return bswap32(*(uint32_t*)&readPages[addr / PAGE_SIZE][addr % PAGE_SIZE]);
+		return bswap16(*(uint16_t*)&readPages[addr / PAGE_SIZE][addr % PAGE_SIZE]);
+	}
+	else
+	{
+		switch (addr)
+		{
+		case 0x10158:
+			return 0x2; // Some kind of console type (maybe debug vs retail?). xbdm.xex relies on this while booting
+		case 0x1015A:
+			return 0; // More xbdm.xex nonsense
+		case 0x1015C:
+			return 0x4f80; // According to assert messages inside xbdm, this is the console's firmware revision
+		case 0x1015E:
+			return 0; // Setting this to 0x8000 will cause a bunch of extra stuff to happen inside xbdm
+		case 0x10164:
+			// If bit 9 is set, then xbdm will enforce in-order execution of I/O (EIEIO)
+			return 0;
+		default:
+			printf("Read16 from unmapped address 0x%08x\n", addr);
+			exit(1);
+		}
+	}
+}
+
+uint32_t Memory::Read32(uint32_t addr, bool slow)
+{
+	if (!slow)
+	{
+		if (!readPages[addr / PAGE_SIZE])
+		{
+			return Read32(addr, true);
+		}
+
+		return bswap32(*(uint32_t*)&readPages[addr / PAGE_SIZE][addr % PAGE_SIZE]);
+	}
+	else
+	{
+		switch (addr)
+		{
+		case 0x10156:
+			return 0x2000000; // Setting this to 0x2000000 causes some kind of memory address to be set to 1
+		default:
+			printf("Read32 from unmapped address 0x%08x\n", addr);
+			exit(1);
+		}
+	}
 }
 
 uint64_t Memory::Read64(uint32_t addr)

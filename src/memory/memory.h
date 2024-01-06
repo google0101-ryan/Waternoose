@@ -25,7 +25,9 @@ uint32_t VirtAllocMemoryRange(uint32_t beginAddr, uint32_t endAddr, uint32_t siz
 uint8_t* GetRawPtrForAddr(uint32_t addr);
 
 uint8_t Read8(uint32_t addr);
-uint32_t Read32(uint32_t addr);
+/// @brief Reads a 16-bit value from the memory mapped to `addr`. Leave slow as default, it's used internally
+uint16_t Read16(uint32_t addr, bool slow = false);
+uint32_t Read32(uint32_t addr, bool slow = false);
 uint64_t Read64(uint32_t addr);
 
 void Write8(uint32_t addr, uint8_t data);

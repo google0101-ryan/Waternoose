@@ -9,6 +9,7 @@ std::unordered_map<std::string, IModule*> modules;
 
 void RegisterModuleForName(const char *name, IModule *mod)
 {
+	printf("Registering module \"%s\"\n", name);
 	modules[name] = mod;
 }
 

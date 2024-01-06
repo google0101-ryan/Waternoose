@@ -17,6 +17,9 @@ void atexit_handler()
 
 int main(int argc, char** argv)
 {
+	VFS::SetRootDirectory(".waternoose");
+	VFS::MountDirectory("/SystemRoot", "SystemRoot");
+
 	if (argc < 2)
 	{
 		printf("Usage: %s <xex name>\n", argv[0]);
@@ -26,7 +29,7 @@ int main(int argc, char** argv)
 	char* xam_buf;
 	size_t xam_size;
 
-	std::ifstream file("xam.xex", std::ios::binary | std::ios::ate);
+	std::ifstream file(".waternoose/SystemRoot/xam.xex", std::ios::binary | std::ios::ate);
 	xam_size = file.tellg();
 	file.seekg(0, std::ios::beg);
 	xam_buf = new char[xam_size];
@@ -43,20 +46,17 @@ int main(int argc, char** argv)
 	file.read(buf, size);
 	file.close();
 
-	VFS::SetRootDirectory(".waternoose");
-	VFS::MountDirectory("/SystemRoot", "SystemRoot");
-
 	Memory::Initialize();
 
 	krnlModule.Initialize();
 
 	std::atexit(Memory::Dump);
 
-	XexLoader xam((uint8_t*)xam_buf, xam_size);
+	xam = new XexLoader((uint8_t*)xam_buf, xam_size, ".waternoose/SystemRoot/xam.xex");
 	// XexLoader loader((uint8_t*)buf, size);
 	
-	mainThreadStackSize = xam.GetStackSize();
-	mainThread = new CPUThread(xam.GetEntryPoint(), xam.GetStackSize(), xam);
+	mainThreadStackSize = xam->GetStackSize();
+	mainThread = new CPUThread(xam->GetEntryPoint(), xam->GetStackSize(), *xam);
 	mainThread->SetArg(0, 0xBCBCBCBC);
 	mainThread->SetArg(1, 1);
 	mainThread->SetArg(2, 0);

@@ -9,6 +9,11 @@
 #include <memory/memory.h>
 #include <util.h>
 #include <loader/lzx.h>
+#include <kernel/kernel.h>
+
+static uint32_t handle = 0x10000001;
+
+XexLoader* xam;
 
 uint32_t mainXexBase, mainXexSize;
 
@@ -38,9 +43,12 @@ void aes_decrypt_buffer(const uint8_t* session_key, const uint8_t* input_buffer,
 	}
 }
 
-XexLoader::XexLoader(uint8_t *buffer, size_t len)
+XexLoader::XexLoader(uint8_t *buffer, size_t len, std::string path)
+: IModule(path.substr(path.find_last_of('/')+1).c_str())
 {
 	this->buffer = buffer;
+	this->path = path.substr(0, path.find_last_of('/'));
+	this->xexHandle = handle++;
 
 	header = *(xexHeader_t*)buffer;
 	header.module_flags = bswap32(header.module_flags);
@@ -150,6 +158,20 @@ XexLoader::XexLoader(uint8_t *buffer, size_t len)
 	void* base = Memory::AllocMemory(baseAddress, uncompressedSize);
 	memcpy(base, outBuffer, uncompressedSize);
 
+	// Load exports
+	exportBaseAddr = bswap32(*(uint32_t*)&buffer[header.sec_info_offset+0x160]);
+	exportTable.magic[0] = Memory::Read32(exportBaseAddr+0x00);
+	exportTable.magic[1] = Memory::Read32(exportBaseAddr+0x04);
+	exportTable.magic[2] = Memory::Read32(exportBaseAddr+0x08);
+	exportTable.modulenumber[0] = Memory::Read32(exportBaseAddr+0x0C);
+	exportTable.modulenumber[1] = Memory::Read32(exportBaseAddr+0x10);
+	exportTable.version[0] = Memory::Read32(exportBaseAddr+0x14);
+	exportTable.version[1] = Memory::Read32(exportBaseAddr+0x18);
+	exportTable.version[2] = Memory::Read32(exportBaseAddr+0x1C);
+	exportTable.imagebaseaddr = Memory::Read32(exportBaseAddr+0x20);
+	exportTable.count = Memory::Read32(exportBaseAddr+0x24);
+	exportTable.base = Memory::Read32(exportBaseAddr+0x28);
+
 	// Now we can patch module calls
 	// xam.xex and xboxkrnl.exe are the two most common imports afaict
 	importHeader_t importHdr = *(importHeader_t*)&buffer[importBaseAddr];
@@ -185,14 +207,17 @@ XexLoader::XexLoader(uint8_t *buffer, size_t len)
 		xexLibrary_t lib;
 		lib.header = libHdr;
 		lib.name = importNames[libHdr.name_index];
+
 		printf("Parsing imports for \"%s\"\n", lib.name.c_str());
 		
-		ParseLibraryInfo(importBaseAddr+libraryoffs+sizeof(libraryHeader_t), lib, libraries.size());
+		ParseLibraryInfo(importBaseAddr+libraryoffs+sizeof(libraryHeader_t), lib, libraries.size(), lib.name);
 
 		libraries.push_back(lib);
 
 		libraryoffs += libHdr.size;
 	}
+
+	Kernel::RegisterModuleForName(GetName().c_str(), this);
 }
 
 uint32_t XexLoader::GetEntryPoint() const
@@ -216,6 +241,21 @@ size_t XexLoader::GetLibraryIndexByName(const char *name) const
 	return SIZE_MAX;
 }
 
+uint32_t XexLoader::LookupOrdinal(uint32_t ordinal)
+{
+	ordinal -= exportTable.base;
+	if (ordinal >= exportTable.count)
+	{
+		printf("ERROR: Imported unknown function 0x%08x\n", ordinal);
+		exit(1);
+	}
+
+	uint32_t num = ordinal;
+	uint32_t ordinal_offset = Memory::Read32(exportBaseAddr+sizeof(xexExport_t)+(num*4));
+	ordinal_offset += exportTable.imagebaseaddr << 16;
+	return ordinal_offset;
+}
+
 void XexLoader::ParseFileInfo(uint32_t offset)
 {
 	fileFormatInfo_t fileInfo = *(fileFormatInfo_t*)&buffer[offset];
@@ -230,7 +270,7 @@ void XexLoader::ParseFileInfo(uint32_t offset)
 	info = fileInfo;
 }
 
-void XexLoader::ParseLibraryInfo(uint32_t offset, xexLibrary_t &lib, int index)
+void XexLoader::ParseLibraryInfo(uint32_t offset, xexLibrary_t &lib, int index, std::string& name)
 {
 	for (uint32_t i = 0; i < lib.header.count; i++)
 	{
@@ -244,12 +284,24 @@ void XexLoader::ParseLibraryInfo(uint32_t offset, xexLibrary_t &lib, int index)
 		// sc 2
 		// blr
 		// nop
-		if ((record >> 24) == 1)
+		if ((record >> 24) == 1 && name != "xam.xex")
 		{
 			Memory::Write32(recordAddr+0x00, 0x39600000 | (index << 12) | (record & 0xFFFF));
 			Memory::Write32(recordAddr+0x04, 0x44000042);
 			Memory::Write32(recordAddr+0x08, 0x4e800020);
 			Memory::Write32(recordAddr+0x0C, 0x60000000);
+		}
+		else if ((record >> 24) == 1 && name == "xam.xex")
+		{
+			// We instead write a stub to call xam.xex functions since we LLE it
+			assert(this != xam); // Should never happen, but just in case
+
+			// Get exports from xam.xex
+			uint32_t addr = xam->LookupOrdinal(record & 0xFFFF);
+			Memory::Write32(recordAddr+0x00, 0x3D600000 | addr >> 16);
+			Memory::Write32(recordAddr+0x04, 0x616B0000 | (addr & 0xFFFF));
+			Memory::Write32(recordAddr+0x08, 0x7D6903A6);
+			Memory::Write32(recordAddr+0x0C, 0x4E800420);
 		}
 	}
 }

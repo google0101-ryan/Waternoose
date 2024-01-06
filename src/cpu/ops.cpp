@@ -4,9 +4,11 @@
 #include <cstdlib>
 #include <cassert>
 #include <bit>
+#include <time.h>
 
 #include <kernel/kernel.h>
 #include <kernel/Module.h>
+#include <loader/xex.h>
 #include "CPU.h"
 
 uint32_t GenShiftMask64(uint8_t me, uint8_t mb)
@@ -16,12 +18,41 @@ uint32_t GenShiftMask64(uint8_t me, uint8_t mb)
 	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
 }
 
+uint32_t GenShiftMask(uint8_t me)
+{
+	uint32_t maskme = ~0u >> me;
+	return maskme;
+}
+
 template<class T>
 T sign_extend(T x, const int bits) 
 {
     T m = 1;
     m <<= bits - 1;
     return (x ^ m) - m;
+}
+
+void CPUThread::twi(uint32_t instruction)
+{
+	uint8_t to = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	int64_t simm = (int64_t)(int16_t)(instruction & 0xFFFF);
+	int64_t a = state.regs[ra];
+
+	bool trap = false;
+	if ((a < simm) && ((to >> 4) & 1)) trap = true;
+	if ((a > simm) && ((to >> 3) & 1)) trap = true;
+	if ((a == simm) && ((to >> 2) & 1)) trap = true;
+	if (((uint64_t)a < (uint64_t)simm) && ((to >> 1) & 1)) trap = true;
+	if (((uint64_t)a > (uint64_t)simm) && ((to >> 0) & 1)) trap = true;
+
+	printf("twi %d,r%d,%ld\n", to, ra, simm);
+
+	if (trap)
+	{
+		printf("TRAP\n");
+		exit(1);
+	}
 }
 
 void CPUThread::mulli(uint32_t instruction)
@@ -33,6 +64,19 @@ void CPUThread::mulli(uint32_t instruction)
 	state.regs[rt] = (int64_t)state.regs[ra] * si;
 
 	printf("mulli r%d,r%d,%ld\n", rt, ra, si);
+}
+
+void CPUThread::subfic(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint64_t simm = (uint64_t)(int64_t)(int16_t)(instruction & 0xFFFF);
+
+	state.regs[rt] = simm - state.regs[ra];
+
+	state.xer.ca = state.regs[ra] <= simm;
+
+	printf("subfic r%d,r%d,0x%08lx\n", rt, ra, simm);
 }
 
 void CPUThread::cmpli(uint32_t instruction)
@@ -212,7 +256,7 @@ void CPUThread::rlwimi(uint32_t instruction)
 	bool rc = instruction & 1;
 
 	uint32_t r = std::rotl<uint32_t>(state.regs[rs], sh);
-	uint64_t mask = GenShiftMask64(me+32, mb+32);
+	uint64_t mask = GenShiftMask64(me, mb);
 	state.regs[ra] = (r & mask) | (state.regs[ra] & ~mask);
 
 	if (rc)
@@ -251,6 +295,18 @@ void CPUThread::ori(uint32_t instruction)
 	printf("ori r%d,r%d,0x%04x\n", ra, rs, ui);
 }
 
+void CPUThread::andi(uint32_t instruction)
+{
+	uint8_t rs = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint16_t ui = instruction & 0xFFFF;
+
+	state.regs[ra] = state.regs[rs] & ui;
+	state.UpdateCRn<int64_t>(state.regs[ra], 0, 0);
+
+	printf("andi. r%d,r%d,0x%04x\n", ra, rs, ui);
+}
+
 void CPUThread::lwarx(uint32_t instruction)
 {
 	uint8_t rt = (instruction >> 21) & 0x1F;
@@ -266,6 +322,78 @@ void CPUThread::lwarx(uint32_t instruction)
 	state.regs[rt] = Memory::Read32(ea);
 
 	printf("lwarx r%d, r%d(r%d)\n", rt, ra, rb);
+}
+
+void CPUThread::lwzx(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t rb = (instruction >> 11) & 0x1F;
+
+	uint32_t ea;
+	if (ra == 0)
+		ea = state.regs[rb];
+	else
+		ea = state.regs[ra] + state.regs[rb];
+	
+	state.regs[rt] = Memory::Read32(ea);
+
+	printf("lwzx r%d, r%d(r%d)\n", rt, ra, rb);
+}
+
+void CPUThread::cmpl(uint32_t instruction)
+{
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t rb = (instruction >> 11) & 0x1F;
+	bool l = (instruction >> 21) & 1;
+	uint8_t bf = (instruction >> 23) & 0x7;
+
+	if (l)
+	{
+		uint64_t a = state.regs[ra];
+		uint64_t b = state.regs[rb];
+		state.UpdateCRn<uint64_t>(a, b, bf);
+		printf("cmpld cr%d,r%d,r%d\n", bf, ra, rb);
+	}
+	else
+	{
+		uint32_t a = state.regs[ra];
+		uint32_t b = state.regs[rb];
+		state.UpdateCRn<uint32_t>(a, b, bf);
+		printf("cmplw cr%d,r%d,r%d\n", bf, ra, rb);
+	}
+}
+
+void CPUThread::subf(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t rb = (instruction >> 11) & 0x1F;
+	bool oe = (instruction >> 10) & 1;
+	bool rc = instruction & 1;
+	assert(!oe);
+
+	state.regs[rt] = state.regs[ra] - state.regs[rb];
+
+	if (rc)
+		state.UpdateCRn<int64_t>(state.regs[rt], 0, 0);
+	
+	printf("subf r%d,r%d,r%d\n", rt, ra, rb);
+}
+
+void CPUThread::andc(uint32_t instruction)
+{
+	uint8_t rs = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t rb = (instruction >> 11) & 0x1F;
+	bool rc = instruction & 1;
+
+	state.regs[ra] = state.regs[rs] & ~state.regs[rb];
+
+	if (rc)
+		state.UpdateCRn<int64_t>(state.regs[ra], 0, 0);
+	
+	printf("andc r%d,r%d,r%d\n", ra, rs, rb);
 }
 
 void CPUThread::mfmsr(uint32_t instruction)
@@ -334,6 +462,22 @@ void CPUThread::mtmsrd(uint32_t instruction)
 	printf("mtmsrd r%d,%d\n", rt, ra);
 }
 
+void CPUThread::mullw(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t rb = (instruction >> 11) & 0x1F;
+	assert(!((instruction >> 10) & 1));
+	bool rc = instruction & 1;
+
+	state.regs[rt] = (uint64_t)(uint32_t)state.regs[ra] * (uint64_t)(uint32_t)state.regs[rb];
+
+	if (rc)
+		state.UpdateCRn<int32_t>(state.regs[rt], 0, 0);
+	
+	printf("mullw r%d,r%d,r%d\n", rt, ra, rb);
+}
+
 void CPUThread::add(uint32_t instruction)
 {
 	uint8_t rt = (instruction >> 21) & 0x1F;
@@ -349,6 +493,11 @@ void CPUThread::add(uint32_t instruction)
 		state.UpdateCRn<int64_t>(state.regs[rt], 0, 0);
 	
 	printf("add%s r%d,r%d,r%d\n", rc ? "." : "", rt, ra, rb);
+}
+
+void CPUThread::dcbt(uint32_t instruction)
+{
+	printf("dcbt\n");
 }
 
 void CPUThread::or_(uint32_t instruction)
@@ -369,6 +518,24 @@ void CPUThread::or_(uint32_t instruction)
 		printf("or%s r%d,r%d,r%d\n", rc ? "." : "", ra, rs, rb);
 }
 
+void CPUThread::divwu(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t rb = (instruction >> 11) & 0x1F;
+	assert(!((instruction >> 10) & 1));
+	bool rc = (instruction & 1);
+
+	uint64_t dividend = (uint32_t)state.regs[ra];
+	uint64_t divisor = (uint32_t)state.regs[rb];
+	state.regs[rt] = (uint32_t)(dividend / divisor);
+
+	if (rc)
+		state.UpdateCRn<int32_t>(state.regs[rt], 0, 0);
+	
+	printf("divwu r%d,r%d,r%d\n", rt, ra, rb);
+}
+
 void CPUThread::mtspr(uint32_t instruction)
 {
 	uint8_t rs = (instruction >> 21) & 0x1F;
@@ -379,6 +546,10 @@ void CPUThread::mtspr(uint32_t instruction)
 	case 0x100:
 		state.lr = state.regs[rs];
 		printf("mtlr r%d\n", rs);
+		break;
+	case 0x120:
+		state.ctr = state.regs[rs];
+		printf("mtctr r%d\n", rs);
 		break;
 	default:
 		printf("Write to unknown SPR 0x%08x\n", spr);
@@ -403,9 +574,19 @@ void CPUThread::mfspr(uint32_t instruction)
 	}
 }
 
+void CPUThread::mftb(uint32_t instruction)
+{
+	uint64_t time_ = time(NULL);
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint16_t tbr = (instruction >> 11) & 0x3FF;
+	tbr = ((tbr >> 5) & 0x1F) | ((tbr & 0x1F) << 5);
+	state.regs[rt] = time_;
+	printf("mftb r%d\n", rt);
+}
+
 void CPUThread::lwz(uint32_t instruction)
 {
-	int16_t ds = (int16_t)(instruction & 0xFFFF);
+	int64_t ds = (int64_t)(int16_t)(instruction & 0xFFFF);
 	uint8_t ra = (instruction >> 16) & 0x1F;
 	uint8_t rs = (instruction >> 21) & 0x1F;
 
@@ -415,7 +596,7 @@ void CPUThread::lwz(uint32_t instruction)
 	else
 		ea = state.regs[ra] + ds;
 	
-	printf("lwz r%d, %d(r%d)\n", rs, ds, ra);
+	printf("lwz r%d, %ld(r%d)\n", rs, ds, ra);
 
 	state.regs[rs] = Memory::Read32(ea);
 }
@@ -486,6 +667,23 @@ void CPUThread::stb(uint32_t instruction)
 	Memory::Write8(ea, state.regs[rt]);
 
 	printf("stb r%d, %d(r%d)\n", rt, ds, ra);
+}
+
+void CPUThread::lhz(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	int16_t ds = instruction & 0xFFFF;
+
+	uint32_t ea;
+	if (!ra)
+		ea = (int32_t)ds;
+	else
+		ea = state.regs[ra] + ds;
+	
+	state.regs[rt] = Memory::Read16(ea);
+
+	printf("lhz r%d, %d(r%d)\n", rt, ds, ra);
 }
 
 void CPUThread::sth(uint32_t instruction)

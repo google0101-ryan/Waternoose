@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <vector>
 #include <string>
+#include <kernel/Module.h>
 
 /// @brief The header of a .xex file
 typedef struct
@@ -94,15 +95,25 @@ typedef struct
 	std::string name;
 } xexLibrary_t;
 
+typedef struct
+{
+	uint32_t magic[3];
+	uint32_t modulenumber[2];
+	uint32_t version[3];
+	uint32_t imagebaseaddr;
+	uint32_t count;
+	uint32_t base;
+} xexExport_t;
+
 extern uint32_t mainXexBase, mainXexSize;
 
-class XexLoader
+class XexLoader : public IModule
 {
 public:
 	/// @brief Loads a .xex file from a buffer into memory
 	/// @param buffer The contents of the .xex file, loaded into memory
 	/// @param len The size, in bytes, of the file buffer
-	XexLoader(uint8_t* buffer, size_t len);
+	XexLoader(uint8_t* buffer, size_t len, std::string path);
 
 	uint32_t GetEntryPoint() const;
 	uint32_t GetStackSize() const;
@@ -110,14 +121,23 @@ public:
 	/// @brief Get the list of libraries imported by the .xex file
 	const std::vector<xexLibrary_t>& GetLibraries() const {return libraries;}
 	size_t GetLibraryIndexByName(const char* name) const;
+
+	/// @brief Returns the path of .xex file, minus the file name
+	const std::string& GetPath() const {return path;}
+
+	uint32_t LookupOrdinal(uint32_t ordinal);
+	virtual uint32_t GetHandle() const {return xexHandle;}
 private:
 	void ParseFileInfo(uint32_t offset);
-	void ParseLibraryInfo(uint32_t offset, xexLibrary_t& lib, int index);
+	void ParseLibraryInfo(uint32_t offset, xexLibrary_t& lib, int index, std::string& name);
 
 	int ReadImageBasicCompressed(uint8_t* buffer, size_t xex_len, char** outBuffer);
 	int ReadImageCompressed(uint8_t* buffer, size_t xex_len, char** outBuffer);
 
 	xexHeader_t header;
+	uint32_t xexHandle;
+
+	std::string path;
 
 	uint8_t* buffer;
 	uint8_t session_key[16];
@@ -131,8 +151,14 @@ private:
 	uint32_t stackSize = 1024*1024;
 
 	uint32_t importBaseAddr;
+
+	uint32_t exportBaseAddr;
+
+	xexExport_t exportTable;
 	
 	std::vector<xexLibrary_t> libraries;
 
 	uint32_t image_size();
 };
+
+extern XexLoader* xam;
