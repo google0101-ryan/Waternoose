@@ -79,7 +79,8 @@ XexLoader::XexLoader(uint8_t *buffer, size_t len, std::string path)
 		optHeaders.push_back(opt);
 	}
 
-	mainXexSize = image_size();
+	if (!mainXexSize)
+		mainXexSize = image_size();
 
 	// Parse security info, including AES key decryption
 	uint8_t* aes_key = (buffer+header.sec_info_offset+336);
@@ -110,7 +111,8 @@ XexLoader::XexLoader(uint8_t *buffer, size_t len, std::string path)
 			break;
 		case 0x10201:
 			baseAddress = hdr.value;
-			mainXexBase = baseAddress;
+			if (!mainXexBase)
+				mainXexBase = baseAddress;
 			printf("Image base is 0x%08x\n", baseAddress);
 			break;
 		case 0x103FF:
@@ -150,27 +152,29 @@ XexLoader::XexLoader(uint8_t *buffer, size_t len, std::string path)
 	if (*(uint32_t*)outBuffer != 0x00905a4d /*"PE" followed by 0x9000*/)
 	{
 		printf("Invalid PE magic\n");
-		exit(1);
 	}
-
-	printf("Found valid PE header file\n");
+	else
+		printf("Found valid PE header file\n");
 
 	void* base = Memory::AllocMemory(baseAddress, uncompressedSize);
 	memcpy(base, outBuffer, uncompressedSize);
 
 	// Load exports
 	exportBaseAddr = bswap32(*(uint32_t*)&buffer[header.sec_info_offset+0x160]);
-	exportTable.magic[0] = Memory::Read32(exportBaseAddr+0x00);
-	exportTable.magic[1] = Memory::Read32(exportBaseAddr+0x04);
-	exportTable.magic[2] = Memory::Read32(exportBaseAddr+0x08);
-	exportTable.modulenumber[0] = Memory::Read32(exportBaseAddr+0x0C);
-	exportTable.modulenumber[1] = Memory::Read32(exportBaseAddr+0x10);
-	exportTable.version[0] = Memory::Read32(exportBaseAddr+0x14);
-	exportTable.version[1] = Memory::Read32(exportBaseAddr+0x18);
-	exportTable.version[2] = Memory::Read32(exportBaseAddr+0x1C);
-	exportTable.imagebaseaddr = Memory::Read32(exportBaseAddr+0x20);
-	exportTable.count = Memory::Read32(exportBaseAddr+0x24);
-	exportTable.base = Memory::Read32(exportBaseAddr+0x28);
+	if (exportBaseAddr)
+	{
+		exportTable.magic[0] = Memory::Read32(exportBaseAddr+0x00);
+		exportTable.magic[1] = Memory::Read32(exportBaseAddr+0x04);
+		exportTable.magic[2] = Memory::Read32(exportBaseAddr+0x08);
+		exportTable.modulenumber[0] = Memory::Read32(exportBaseAddr+0x0C);
+		exportTable.modulenumber[1] = Memory::Read32(exportBaseAddr+0x10);
+		exportTable.version[0] = Memory::Read32(exportBaseAddr+0x14);
+		exportTable.version[1] = Memory::Read32(exportBaseAddr+0x18);
+		exportTable.version[2] = Memory::Read32(exportBaseAddr+0x1C);
+		exportTable.imagebaseaddr = Memory::Read32(exportBaseAddr+0x20);
+		exportTable.count = Memory::Read32(exportBaseAddr+0x24);
+		exportTable.base = Memory::Read32(exportBaseAddr+0x28);
+	}
 
 	// Now we can patch module calls
 	// xam.xex and xboxkrnl.exe are the two most common imports afaict

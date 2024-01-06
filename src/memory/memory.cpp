@@ -14,6 +14,8 @@
 
 extern uint32_t mainThreadStackSize;
 
+std::vector<AllocInfo> allocInfo;
+
 uint8_t** readPages, **writePages;
 #define PAGE_SIZE (4*1024)
 #define MAX_ADDRESS_SPACE 0xFFFF0000
@@ -102,6 +104,11 @@ uint32_t Memory::VirtAllocMemoryRange(uint32_t beginAddr, uint32_t endAddr, uint
 	for (int i = 0; i < requiredPages; i++)
 		usedPages.set(candidate+i, true);
 	
+	AllocInfo info;
+	info.baseAddress = candidate*PAGE_SIZE;
+	info.regionSize = requiredPages*PAGE_SIZE;
+	allocInfo.push_back(info);
+	
 	return candidate*PAGE_SIZE;
 }
 
@@ -114,6 +121,21 @@ uint8_t *Memory::GetRawPtrForAddr(uint32_t addr)
 	}
 
 	return &readPages[addr / PAGE_SIZE][addr % PAGE_SIZE];
+}
+
+bool Memory::GetAllocInfo(uint32_t addr, AllocInfo& outInfo)
+{
+	for (auto& info : allocInfo)
+	{
+		if (info.baseAddress <= addr && info.baseAddress+info.regionSize > addr)
+		{
+			outInfo = info;
+			return true;
+		}
+	}
+	
+	printf("Failed to get allocation info for region 0x%08x\n", addr);
+	return false;
 }
 
 uint8_t Memory::Read8(uint32_t addr)
@@ -152,6 +174,8 @@ uint16_t Memory::Read16(uint32_t addr, bool slow)
 			return 0; // Setting this to 0x8000 will cause a bunch of extra stuff to happen inside xbdm
 		case 0x10164:
 			// If bit 9 is set, then xbdm will enforce in-order execution of I/O (EIEIO)
+			return 0;
+		case 0x8e03860a: // Some kind of weird page mapped by the OS
 			return 0;
 		default:
 			printf("Read16 from unmapped address 0x%08x\n", addr);

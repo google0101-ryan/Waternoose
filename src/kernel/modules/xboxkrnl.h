@@ -18,9 +18,14 @@ private:
 	void ExRegisterTitleTerminationNotification(CPUThread& caller); // 0x15
 	void KeGetCurrentProcessType(CPUThread& caller); // 0x66
 	void KeQuerySystemTime(CPUThread& caller); // 0x84
+	void NtAllocateVirtualMemory(CPUThread& caller);
 	void NtCreateFile(CPUThread& caller); // 0xd2
+	void NtQueryVirtualMemory(CPUThread& caller); // 0xee
 	void ObTranslateSymbolicLink(CPUThread& caller); // 0x113
+	void RtlEnterCriticalSection(CPUThread& caller); // 0x125
 	void RtlInitAnsiString(CPUThread& caller); // 0x12C
+	void RtlInitializeCriticalSection(CPUThread& caller); // 0x12E
+	void RtlLeaveCriticalSection(CPUThread& caller); // 0x130
 	void _snprintf(CPUThread& caller); // 0x13A
 	void RltTimeToTimeFields(CPUThread& caller); // 0x140
 	void XexGetModuleHandle(CPUThread& caller); // 0x195

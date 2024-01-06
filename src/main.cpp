@@ -53,13 +53,18 @@ int main(int argc, char** argv)
 	std::atexit(Memory::Dump);
 
 	xam = new XexLoader((uint8_t*)xam_buf, xam_size, ".waternoose/SystemRoot/xam.xex");
-	// XexLoader loader((uint8_t*)buf, size);
-	
+	XexLoader loader((uint8_t*)buf, size, argv[0]);
+
+#if 1
 	mainThreadStackSize = xam->GetStackSize();
 	mainThread = new CPUThread(xam->GetEntryPoint(), xam->GetStackSize(), *xam);
 	mainThread->SetArg(0, 0xBCBCBCBC);
 	mainThread->SetArg(1, 1);
 	mainThread->SetArg(2, 0);
+#else
+	mainThreadStackSize = loader.GetStackSize();
+	mainThread = new CPUThread(loader.GetEntryPoint(), loader.GetStackSize(), loader);
+#endif
 
 	std::atexit(atexit_handler);
 

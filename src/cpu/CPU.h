@@ -13,10 +13,16 @@ class XexLoader;
 typedef struct
 {
 	uint64_t pc;
-	uint64_t regs[32]; // These are mostly accessed as single uint32_t registers
+	uint64_t regs[32];
 	uint64_t ctr;
 	uint64_t lr;
 	uint64_t msr;
+
+	union
+	{
+		uint32_t u;
+		float f;
+	} fr[32];
 
 	struct
 	{
@@ -115,16 +121,23 @@ private:
 	void rlwimi(uint32_t instruction); // 20
 	void rlwinm(uint32_t instruction); // 21
 	void ori(uint32_t instruction); // 24
+	void oris(uint32_t instruction); // 25
 	void andi(uint32_t instruction); // 28
+	void cmp(uint32_t instruction); // 31 0
+	void subfc(uint32_t instruction); // 31 8
 	void lwarx(uint32_t instruction); // 31 20
 	void lwzx(uint32_t instruction); // 31 23
+	void and_(uint32_t instruction); // 31 28
 	void cmpl(uint32_t instruction); // 31 32
 	void subf(uint32_t instruction); // 31 40
 	void andc(uint32_t instruction); // 31 60
 	void mfmsr(uint32_t instruction); // 31 83
 	void subfe(uint32_t instruction); // 31 136
 	void stwcx(uint32_t instruction); // 31 150
+	void stwx(uint32_t instruction); // 31 151
 	void mtmsrd(uint32_t instruction); // 31 178
+	void subfze(uint32_t instruction); // 31 200
+	void addze(uint32_t instruction); // 31 202
 	void mullw(uint32_t instruction); // 31 235
 	void add(uint32_t instruction); // 31 266
 	void dcbt(uint32_t instruction); // 31 278
@@ -133,6 +146,7 @@ private:
 	void or_(uint32_t instruction); // 31 444
 	void divwu(uint32_t instruction); // 31 459
 	void mtspr(uint32_t instruction); // 31 467
+	void srawi(uint32_t instruction); // 31 824
 	void lwz(uint32_t instruction); // 32
 	void lbz(uint32_t instruction); // 34
 	void stw(uint32_t instruction); // 36
@@ -140,6 +154,8 @@ private:
 	void stb(uint32_t instruction); // 38
 	void lhz(uint32_t instruction); // 40
 	void sth(uint32_t instruction); // 44
+	void lfs(uint32_t instruction); // 48
+	void stfs(uint32_t instruction); // 52
 	void ld(uint32_t instruction); // 58
 	void std(uint32_t instruction); // 62
 private:

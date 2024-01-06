@@ -2,6 +2,12 @@
 
 #include <stdint.h>
 
+struct AllocInfo
+{
+	uint32_t baseAddress;
+	uint32_t regionSize;
+};
+
 namespace Memory
 {
 
@@ -23,6 +29,7 @@ void* AllocMemory(uint32_t baseAddress, uint32_t size);
 uint32_t VirtAllocMemoryRange(uint32_t beginAddr, uint32_t endAddr, uint32_t size);
 
 uint8_t* GetRawPtrForAddr(uint32_t addr);
+bool GetAllocInfo(uint32_t addr, AllocInfo& info);
 
 uint8_t Read8(uint32_t addr);
 /// @brief Reads a 16-bit value from the memory mapped to `addr`. Leave slow as default, it's used internally

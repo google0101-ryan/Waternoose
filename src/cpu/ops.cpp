@@ -11,17 +11,28 @@
 #include <loader/xex.h>
 #include "CPU.h"
 
-uint32_t GenShiftMask64(uint8_t me, uint8_t mb)
+static inline uint64_t XEMASK(uint32_t mstart, uint32_t mstop) 
 {
-	uint32_t maskmb = ~0u >> mb;
-	uint32_t maskme = ~0u << (31 - me);
-	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
+	mstart &= 0x3F;
+  	mstop &= 0x3F;
+  	uint64_t value =
+      (UINT64_MAX >> mstart) ^ ((mstop >= 63) ? 0 : UINT64_MAX >> (mstop + 1));
+  	return mstart <= mstop ? value : ~value;
 }
 
 uint32_t GenShiftMask(uint8_t me)
 {
 	uint32_t maskme = ~0u >> me;
 	return maskme;
+}
+
+
+
+uint32_t GenShiftMask64(uint8_t me, uint8_t mb)
+{
+	uint32_t maskmb = ~0u >> mb;
+	uint32_t maskme = ~0u << (31 - me);
+	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
 }
 
 template<class T>
@@ -74,7 +85,8 @@ void CPUThread::subfic(uint32_t instruction)
 
 	state.regs[rt] = simm - state.regs[ra];
 
-	state.xer.ca = state.regs[ra] <= simm;
+	uint32_t trunc_v2 = (uint32_t)state.regs[ra];
+	state.xer.ca = ((uint32_t)simm > (trunc_v2-1)) | (!trunc_v2);
 
 	printf("subfic r%d,r%d,0x%08lx\n", rt, ra, simm);
 }
@@ -124,16 +136,12 @@ void CPUThread::addic(uint32_t instruction)
 	uint8_t ra = (instruction >> 16) & 0x1F;
 
 	if (si < 0)
-		state.xer.ca = (state.regs[ra] < -si);
-
-	if (si < 0)
 		printf("subic r%d,r%d,%d\n", rt, ra, -si);
 	else
 		printf("addic r%d,r%d,%d\n", rt, ra, si);
 	state.regs[rt] = state.regs[ra] + (int64_t)si;
 
-	if (si >= 0)
-		state.xer.ca = state.regs[rt] < state.regs[ra];
+	state.xer.ca = ((uint32_t)(int64_t)si < !((uint32_t)state.regs[ra]));
 }
 
 void CPUThread::addi(uint32_t instruction)
@@ -275,13 +283,13 @@ void CPUThread::rlwinm(uint32_t instruction)
 	bool rc = instruction & 1;
 
 	uint32_t r = std::rotl<uint32_t>(state.regs[rs], sh);
-	uint64_t mask = GenShiftMask64(me+32, mb+32);
+	uint64_t mask = GenShiftMask64(me, mb);
 	state.regs[ra] = r & mask;
 
 	if (rc)
 		state.UpdateCRn<int32_t>(state.regs[ra], 0, 0);
 	
-	printf("rlwinm r%d,r%d,%d,0x%02x,0x%02x\n", ra, rs, sh, mb, me);
+	printf("rlwinm r%d,r%d,%d,0x%02x,0x%02x (0x%08x)\n", ra, rs, sh, mb, me, mask);
 }
 
 void CPUThread::ori(uint32_t instruction)
@@ -295,6 +303,17 @@ void CPUThread::ori(uint32_t instruction)
 	printf("ori r%d,r%d,0x%04x\n", ra, rs, ui);
 }
 
+void CPUThread::oris(uint32_t instruction)
+{
+	uint8_t rs = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint32_t ui = instruction & 0xFFFF;
+
+	state.regs[ra] = state.regs[rs] | (ui << 16);
+
+	printf("oris r%d,r%d,0x%04x\n", ra, rs, ui);
+}
+
 void CPUThread::andi(uint32_t instruction)
 {
 	uint8_t rs = (instruction >> 21) & 0x1F;
@@ -302,9 +321,53 @@ void CPUThread::andi(uint32_t instruction)
 	uint16_t ui = instruction & 0xFFFF;
 
 	state.regs[ra] = state.regs[rs] & ui;
-	state.UpdateCRn<int64_t>(state.regs[ra], 0, 0);
+	state.UpdateCRn<int32_t>(state.regs[ra], 0, 0);
 
 	printf("andi. r%d,r%d,0x%04x\n", ra, rs, ui);
+}
+
+void CPUThread::cmp(uint32_t instruction)
+{
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t rb = (instruction >> 11) & 0x1F;
+	bool l = (instruction >> 21) & 1;
+	uint8_t bf = (instruction >> 23) & 0x7;
+
+	if (l)
+	{
+		int64_t a = state.regs[ra];
+		int64_t b = state.regs[rb];
+		state.UpdateCRn<int64_t>(a, b, bf);
+		printf("cmpd cr%d,r%d,r%d\n", bf, ra, rb);
+	}
+	else
+	{
+		int32_t a = (int32_t)state.regs[ra];
+		int32_t b = (int32_t)state.regs[rb];
+		state.UpdateCRn<int32_t>(a, b, bf);
+		printf("cmpw cr%d,r%d,r%d\n", bf, ra, rb);
+	}
+}
+
+void CPUThread::subfc(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t rb = (instruction >> 11) & 0x1F;
+	bool rc = instruction & 1;
+	assert(!((instruction >> 10) & 1));
+
+	uint64_t result = state.regs[rb] - state.regs[ra];
+
+	uint32_t trunc_v2 = (uint32_t)state.regs[ra];
+	state.xer.ca = ((uint32_t)state.regs[rb] > (trunc_v2-1)) | (!trunc_v2);
+	
+	state.regs[rt] = result;
+	
+	if (rc)
+		state.UpdateCRn<int32_t>(state.regs[rt], 0, 0);
+	
+	printf("subfc r%d,r%d,r%d\n", rt, ra, rb);
 }
 
 void CPUThread::lwarx(uint32_t instruction)
@@ -341,6 +404,21 @@ void CPUThread::lwzx(uint32_t instruction)
 	printf("lwzx r%d, r%d(r%d)\n", rt, ra, rb);
 }
 
+void CPUThread::and_(uint32_t instruction)
+{
+	uint8_t rs = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t rb = (instruction >> 11) & 0x1F;
+	bool rc = (instruction & 1);
+
+	state.regs[ra] = state.regs[rs] & state.regs[rb];
+
+	if (rc)
+		state.UpdateCRn<int32_t>(state.regs[ra], 0L, 0);
+
+	printf("and%s r%d,r%d,r%d\n", rc ? "." : "", ra, rs, rb);
+}
+
 void CPUThread::cmpl(uint32_t instruction)
 {
 	uint8_t ra = (instruction >> 16) & 0x1F;
@@ -373,10 +451,10 @@ void CPUThread::subf(uint32_t instruction)
 	bool rc = instruction & 1;
 	assert(!oe);
 
-	state.regs[rt] = state.regs[ra] - state.regs[rb];
+	state.regs[rt] = state.regs[rb] - state.regs[ra];
 
 	if (rc)
-		state.UpdateCRn<int64_t>(state.regs[rt], 0, 0);
+		state.UpdateCRn<int32_t>(state.regs[rt], 0, 0);
 	
 	printf("subf r%d,r%d,r%d\n", rt, ra, rb);
 }
@@ -391,7 +469,7 @@ void CPUThread::andc(uint32_t instruction)
 	state.regs[ra] = state.regs[rs] & ~state.regs[rb];
 
 	if (rc)
-		state.UpdateCRn<int64_t>(state.regs[ra], 0, 0);
+		state.UpdateCRn<int32_t>(state.regs[ra], 0, 0);
 	
 	printf("andc r%d,r%d,r%d\n", ra, rs, rb);
 }
@@ -416,9 +494,12 @@ void CPUThread::subfe(uint32_t instruction)
 	state.regs[rt] = ~state.regs[ra] + state.regs[rb] + state.xer.ca;
 
 	if (rc)
-		state.UpdateCRn<int64_t>(state.regs[rt], 0, 0);
+		state.UpdateCRn<int32_t>(state.regs[rt], 0, 0);
 	
-	state.xer.ca = state.regs[ra] < (state.regs[rb] + state.xer.ca);
+	uint32_t v1 = (uint32_t)(~state.regs[ra]);
+	uint32_t v2 = (uint32_t)(state.regs[rb]);
+	uint32_t v3 = state.xer.ca;
+	state.xer.ca = ((v1+v2+v3) < v3) | ((v1+v2) < v1);
 
 	printf("subfe r%d,r%d,r%d\n", rt, ra, rb);
 }
@@ -445,6 +526,23 @@ void CPUThread::stwcx(uint32_t instruction)
 	printf("stwcx. r%d, r%d(r%d)\n", rt, ra, rb);
 }
 
+void CPUThread::stwx(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t rb = (instruction >> 11) & 0x1F;
+
+	uint32_t ea;
+	if (ra == 0)
+		ea = state.regs[rb];
+	else
+		ea = state.regs[ra] + state.regs[rb];
+
+	Memory::Write32(ea, state.regs[rt]);
+
+	printf("stwx r%d, r%d(r%d)\n", rt, ra, rb);
+}
+
 void CPUThread::mtmsrd(uint32_t instruction)
 {
 	uint8_t rt = (instruction >> 21) & 0x1F;
@@ -460,6 +558,47 @@ void CPUThread::mtmsrd(uint32_t instruction)
 	}
 
 	printf("mtmsrd r%d,%d\n", rt, ra);
+}
+
+void CPUThread::subfze(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	assert(!((instruction >> 10) & 1));
+	bool rc = instruction & 1;
+
+	state.regs[rt] = ~(state.regs[ra]) + state.xer.ca;
+	
+	uint32_t v1 = (uint32_t)(~state.regs[ra]);
+	uint32_t v2 = 0;
+	uint32_t v3 = state.xer.ca;
+	state.xer.ca = ((v1+v2+v3) < v3) | ((v1+v2) < v1);
+
+	if (rc)
+		state.UpdateCRn<int32_t>(state.regs[rt], 0, 0);
+	
+	printf("subfze r%d,r%d\n", rt, ra);
+}
+
+void CPUThread::addze(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	assert(!((instruction >> 10) & 1));
+	bool rc = instruction & 1;
+
+	uint64_t result = state.regs[ra] + state.xer.ca;
+
+	uint32_t v1 = (uint32_t)(state.regs[ra]);
+	uint32_t v2 = 0;
+	uint32_t v3 = state.xer.ca;
+	state.xer.ca = ((v1+v2+v3) < v3) | ((v1+v2) < v1);
+
+	state.regs[rt] = result;
+	if (rc)
+		state.UpdateCRn<int32_t>(result, 0, 0);
+	
+	printf("addze r%d,r%d\n", rt, ra);
 }
 
 void CPUThread::mullw(uint32_t instruction)
@@ -490,7 +629,7 @@ void CPUThread::add(uint32_t instruction)
 	state.regs[rt] = state.regs[ra] + state.regs[rb];
 
 	if (rc)
-		state.UpdateCRn<int64_t>(state.regs[rt], 0, 0);
+		state.UpdateCRn<int32_t>(state.regs[rt], 0, 0);
 	
 	printf("add%s r%d,r%d,r%d\n", rc ? "." : "", rt, ra, rb);
 }
@@ -510,7 +649,7 @@ void CPUThread::or_(uint32_t instruction)
 	state.regs[ra] = state.regs[rs] | state.regs[rb];
 
 	if (rc)
-		state.UpdateCRn<int64_t>(state.regs[ra], 0L, 0);
+		state.UpdateCRn<int32_t>(state.regs[ra], 0L, 0);
 
 	if (rs == rb)
 		printf("mr r%d,r%d\n", ra, rs);
@@ -555,6 +694,22 @@ void CPUThread::mtspr(uint32_t instruction)
 		printf("Write to unknown SPR 0x%08x\n", spr);
 		exit(1);
 	}
+}
+
+void CPUThread::srawi(uint32_t instruction)
+{
+	uint8_t rs = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	uint8_t sh = (instruction >> 11) & 0x1F;
+	bool rc = instruction & 1;
+
+	int32_t rs_ = state.regs[rs];
+	state.regs[ra] = rs_ >> sh;
+	state.xer.ca = (rs_ < 0) & ((state.regs[ra] << sh) != rs_);
+	if (rc)
+		state.UpdateCRn<int32_t>(state.regs[ra], 0, 0);
+	
+	printf("srawi r%d,r%d,%d\n", ra, rs, sh);
 }
 
 void CPUThread::mfspr(uint32_t instruction) 
@@ -703,9 +858,9 @@ void CPUThread::sth(uint32_t instruction)
 	printf("sth r%d, %d(r%d)\n", rt, ds, ra);
 }
 
-void CPUThread::ld(uint32_t instruction)
+void CPUThread::lfs(uint32_t instruction)
 {
-	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t frt = (instruction >> 21) & 0x1F;
 	uint8_t ra = (instruction >> 16) & 0x1F;
 	int16_t ds = instruction & 0xFFFC;
 
@@ -715,16 +870,55 @@ void CPUThread::ld(uint32_t instruction)
 	else
 		ea = state.regs[ra] + ds;
 	
+	state.fr[frt].u = Memory::Read32(ea);
+
+	printf("lfs fr%d, %d(r%d)\n", frt, ds, ra);
+}
+
+void CPUThread::stfs(uint32_t instruction)
+{
+	uint8_t frt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	int16_t ds = instruction & 0xFFFC;
+
+	uint32_t ea;
+	if (!ra)
+		ea = (int32_t)ds;
+	else
+		ea = state.regs[ra] + ds;
+	
+	Memory::Write32(ea, state.fr[frt].u);
+
+	printf("stfs fr%d, %d(r%d)\n", frt, ds, ra);
+}
+
+void CPUThread::ld(uint32_t instruction)
+{
+	uint8_t rt = (instruction >> 21) & 0x1F;
+	uint8_t ra = (instruction >> 16) & 0x1F;
+	int16_t ds = instruction & 0xFFFC;
+	uint8_t update = (instruction & 1);
+
+	uint32_t ea;
+	if (!ra)
+		ea = (int32_t)ds;
+	else
+		ea = state.regs[ra] + ds;
+	
 	state.regs[rt] = Memory::Read64(ea);
 
-	printf("ld r%d, %d(r%d)\n", rt, ds, ra);
+	printf("ld%s r%d, %d(r%d)\n", update ? "u" : "", rt, ds, ra);
+
+	if (update)
+		state.regs[ra] = ea;
 }
 
 void CPUThread::std(uint32_t instruction)
 {
-	int16_t ds = (int16_t)(instruction & 0xFFFF);
+	int16_t ds = (int16_t)(instruction & 0xFFFC);
 	uint8_t ra = (instruction >> 16) & 0x1F;
 	uint8_t rs = (instruction >> 21) & 0x1F;
+	uint8_t update = (instruction & 1);
 
 	uint32_t ea = 0;
 	if (ra == 0)
@@ -732,7 +926,10 @@ void CPUThread::std(uint32_t instruction)
 	else
 		ea = state.regs[ra] + ds;
 	
-	printf("std r%d, %d(r%d)\n", rs, ds, ra);
+	printf("std%s r%d, %d(r%d)\n", update ? "u" : "", rs, ds, ra);
 
 	Memory::Write64(ea, state.regs[rs]);
+
+	if (update)
+		state.regs[ra] = ea;
 }

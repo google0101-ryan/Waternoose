@@ -68,14 +68,29 @@ void XboxKrnlModule::CallFunctionByOrdinal(uint32_t ordinal, CPUThread &caller)
 	case 0x84:
 		KeQuerySystemTime(caller);
 		return;
+	case 0xcc:
+		NtAllocateVirtualMemory(caller);
+		return;
 	case 0xd2:
 		NtCreateFile(caller);
+		return;
+	case 0xee:
+		NtQueryVirtualMemory(caller);
 		return;
 	case 0x113:
 		ObTranslateSymbolicLink(caller);
 		return;
+	case 0x125:
+		RtlEnterCriticalSection(caller);
+		return;
 	case 0x12C:
 		RtlInitAnsiString(caller);
+		return;
+	case 0x12E:
+		RtlInitializeCriticalSection(caller);
+		return;
+	case 0x130:
+		RtlLeaveCriticalSection(caller);
 		return;
 	case 0x13A:
 		_snprintf(caller);
@@ -235,6 +250,24 @@ void XboxKrnlModule::KeQuerySystemTime(CPUThread &caller)
 	Memory::Write64(timePtr, time(NULL));
 }
 
+// TODO: Make this not suck
+void XboxKrnlModule::NtAllocateVirtualMemory(CPUThread &caller)
+{
+	uint32_t region_size_ptr = caller.GetState().regs[4];
+	uint32_t out_addr_ptr = caller.GetState().regs[3];
+
+	uint32_t region_size = Memory::Read32(region_size_ptr);
+
+	uint32_t addr = Memory::VirtAllocMemoryRange(0x8C000000, 0x8FFFFFFF, region_size);
+	Memory::AllocMemory(addr, region_size);
+
+	Memory::Write32(out_addr_ptr, addr);
+
+	printf("NtAllocateVirtualMemory(0x%08lx, 0x%08x, 0x%08x) = 0x%08x\n", caller.GetState().regs[3], region_size, out_addr_ptr, addr);
+
+	caller.GetState().regs[3] = 0;
+}
+
 void XboxKrnlModule::NtCreateFile(CPUThread &caller)
 {
 	arg_index = 0;
@@ -259,10 +292,55 @@ void XboxKrnlModule::NtCreateFile(CPUThread &caller)
 	caller.GetState().regs[3] = (uint32_t)-1U;
 }
 
+void XboxKrnlModule::NtQueryVirtualMemory(CPUThread &caller)
+{
+	arg_index = 0;
+	uint32_t base_addr = GetNextArg(caller.GetState());
+	uint32_t outBasicInfoPtr = GetNextArg(caller.GetState());
+
+	printf("NtQueryVirtualMemory(0x%08x, 0x%08x)\n", base_addr, outBasicInfoPtr);
+	
+	AllocInfo info;
+	if (!Memory::GetAllocInfo(base_addr, info))
+	{
+		caller.GetState().regs[3] = 0xC000000DL;
+		return;
+	}
+
+	Memory::Write32(outBasicInfoPtr+0x00, info.baseAddress);
+	Memory::Write32(outBasicInfoPtr+0x04, info.baseAddress);
+	Memory::Write32(outBasicInfoPtr+0x08, 0x4);
+	Memory::Write32(outBasicInfoPtr+0x0C, info.regionSize);
+	Memory::Write32(outBasicInfoPtr+0x10, 0x1000);
+	Memory::Write32(outBasicInfoPtr+0x14, 0x4);
+	Memory::Write32(outBasicInfoPtr+0x18, 0x20000);
+
+	caller.GetState().regs[3] = 0;
+}
+
 void XboxKrnlModule::ObTranslateSymbolicLink(CPUThread& caller)
 {
 	printf("TODO: ObTranslateSymbolicLink\n");
 	caller.GetState().regs[3] = (uint64_t)-1U;
+}
+
+void XboxKrnlModule::RtlEnterCriticalSection(CPUThread &caller)
+{
+	uint32_t critPtr = caller.GetState().regs[3];
+
+	if (Memory::Read32(critPtr) != 0)
+	{
+		// TODO: Recursive locks and waiting on locks
+		printf("Critical section already entered!\n");
+		exit(1);
+	}
+
+	Memory::Write64(critPtr, 1);
+	Memory::Write64(critPtr+0x08, 1);
+
+	caller.GetState().regs[3] = 0;
+
+	printf("RtlEnterCriticalSection(0x%08x)\n", critPtr);
 }
 
 void XboxKrnlModule::RtlInitAnsiString(CPUThread &caller)
@@ -292,6 +370,33 @@ void XboxKrnlModule::RtlInitAnsiString(CPUThread &caller)
 		printf("RtlInitAnsiString(0x%08x, NULL\n", dstPtr);
 	}
 	Memory::Write32(dstPtr+4, strPtr);
+}
+
+void XboxKrnlModule::RtlInitializeCriticalSection(CPUThread &caller)
+{
+	arg_index = 0;
+	uint32_t sectionPtr = GetNextArg(caller.GetState());
+
+	Memory::Write64(sectionPtr+0x00, 0); // LockCount
+	Memory::Write64(sectionPtr+0x08, 0); // RecursionCount
+	Memory::Write32(sectionPtr+0x0C, 0); // OwningThread
+	Memory::Write64(sectionPtr+0x10, 0); // SpinCount
+
+	caller.GetState().regs[3] = 0;
+
+	printf("RtlInitializeCriticalSection(0x%08x)\n", sectionPtr);
+}
+
+void XboxKrnlModule::RtlLeaveCriticalSection(CPUThread &caller)
+{
+	uint32_t critPtr = caller.GetState().regs[3];
+
+	Memory::Write64(critPtr, 0);
+	Memory::Write64(critPtr+0x08, 0);
+
+	caller.GetState().regs[3] = 0;
+
+	printf("RtlLeaveCriticalSection(0x%08x)\n", critPtr);
 }
 
 void XboxKrnlModule::_snprintf(CPUThread &caller)
@@ -460,7 +565,7 @@ void XboxKrnlModule::NtAllocateEncryptedMemory(CPUThread &caller)
 
 	Memory::Write32(out_addr_ptr, addr);
 
-	printf("NtAllocateEncryptedMemory(0x%08lx, 0x%08x, 0x%08x)\n", caller.GetState().regs[3], region_size, out_addr_ptr);
+	printf("NtAllocateEncryptedMemory(0x%08lx, 0x%08x, 0x%08x) = 0x%08x\n", caller.GetState().regs[3], region_size, out_addr_ptr, addr);
 
 	caller.GetState().regs[3] = 0;
 }

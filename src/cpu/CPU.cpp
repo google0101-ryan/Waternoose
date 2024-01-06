@@ -107,9 +107,21 @@ void CPUThread::Run()
 	{
 		ori(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 25)
+	{
+		oris(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 28)
 	{
 		andi(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 0)
+	{	
+		cmp(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 8)
+	{	
+		subfc(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 20)
 	{	
@@ -118,6 +130,10 @@ void CPUThread::Run()
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 23)
 	{	
 		lwzx(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 28)
+	{	
+		and_(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 32)
 	{	
@@ -143,9 +159,21 @@ void CPUThread::Run()
 	{	
 		stwcx(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 151)
+	{	
+		stwx(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 178)
 	{	
 		mtmsrd(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 200)
+	{	
+		subfze(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 202)
+	{	
+		addze(instr);
 	}
 	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 235)
 	{	
@@ -183,6 +211,10 @@ void CPUThread::Run()
 	{	
 		mtspr(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 31 && ((instr >> 1) & 0x3FF) == 824)
+	{	
+		srawi(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 32)
 	{
 		lwz(instr);
@@ -211,6 +243,14 @@ void CPUThread::Run()
 	{
 		sth(instr);
 	}
+	else if (((instr >> 26) & 0x3F) == 48)
+	{
+		lfs(instr);
+	}
+	else if (((instr >> 26) & 0x3F) == 52)
+	{
+		stfs(instr);
+	}
 	else if (((instr >> 26) & 0x3F) == 58)
 	{
 		ld(instr);
@@ -230,6 +270,8 @@ void CPUThread::Dump()
 {
 	for (int i = 0; i < 32; i++)
 		printf("r%d\t->\t0x%08lx\n", i, state.regs[i]);
+	for (int i = 0; i < 32; i++)
+		printf("fr%d\t->\t%0.2f\n", i, state.fr[i].f);
 	for (int i = 0; i < 7; i++)
 		printf("cr%d\t->\t%d\n", i, state.GetCR(i));
 	printf("[%s]\n", state.xer.ca ? "c" : ".");
