@@ -103,34 +103,34 @@ $(function() { codefold.init(1); });
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keywordtype">int</span> main(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span>** argv)</div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>{</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    <span class="keywordflow">if</span> (argc &lt; 2)</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    {</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>        printf(<span class="stringliteral">&quot;Usage: %s &lt;xex name&gt;\n&quot;</span>, argv[0]);</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>        <span class="keywordflow">return</span> 0;</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    }</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    <span class="keywordtype">char</span>* xam_buf;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    <span class="keywordtype">size_t</span> xam_size;</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    VFS::SetRootDirectory(<span class="stringliteral">&quot;.waternoose&quot;</span>);</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    VFS::MountDirectory(<span class="stringliteral">&quot;/SystemRoot&quot;</span>, <span class="stringliteral">&quot;SystemRoot&quot;</span>);</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    <span class="keywordflow">if</span> (argc &lt; 2)</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    {</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>        printf(<span class="stringliteral">&quot;Usage: %s &lt;xex name&gt;\n&quot;</span>, argv[0]);</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>        <span class="keywordflow">return</span> 0;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    }</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    std::ifstream file(<span class="stringliteral">&quot;xam.xex&quot;</span>, std::ios::binary | std::ios::ate);</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    xam_size = file.tellg();</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    file.seekg(0, std::ios::beg);</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    xam_buf = <span class="keyword">new</span> <span class="keywordtype">char</span>[xam_size];</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    file.read(xam_buf, xam_size);</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    file.close();</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    <span class="keywordtype">char</span>* buf;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    <span class="keywordtype">size_t</span> size;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    <span class="keywordtype">char</span>* xam_buf;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    <span class="keywordtype">size_t</span> xam_size;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    std::ifstream file(<span class="stringliteral">&quot;.waternoose/SystemRoot/xam.xex&quot;</span>, std::ios::binary | std::ios::ate);</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    xam_size = file.tellg();</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    file.seekg(0, std::ios::beg);</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    xam_buf = <span class="keyword">new</span> <span class="keywordtype">char</span>[xam_size];</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    file.read(xam_buf, xam_size);</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    file.close();</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    file.open(argv[1], std::ios::binary | std::ios::ate);</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    size = file.tellg();</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    file.seekg(0, std::ios::beg);</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    buf = <span class="keyword">new</span> <span class="keywordtype">char</span>[size];</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    file.read(buf, size);</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    file.close();</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    VFS::SetRootDirectory(<span class="stringliteral">&quot;.waternoose&quot;</span>);</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    VFS::MountDirectory(<span class="stringliteral">&quot;/SystemRoot&quot;</span>, <span class="stringliteral">&quot;SystemRoot&quot;</span>);</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    <span class="keywordtype">char</span>* buf;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <span class="keywordtype">size_t</span> size;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    file.open(argv[1], std::ios::binary | std::ios::ate);</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    size = file.tellg();</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    file.seekg(0, std::ios::beg);</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    buf = <span class="keyword">new</span> <span class="keywordtype">char</span>[size];</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    file.read(buf, size);</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    file.close();</div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    Memory::Initialize();</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
@@ -138,11 +138,11 @@ $(function() { codefold.init(1); });
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    std::atexit(Memory::Dump);</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    <a class="code hl_class" href="../../d8/dc6/classXexLoader.html">XexLoader</a> xam((uint8_t*)xam_buf, xam_size);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    xam = <span class="keyword">new</span> <a class="code hl_class" href="../../d8/dc6/classXexLoader.html">XexLoader</a>((uint8_t*)xam_buf, xam_size, <span class="stringliteral">&quot;.waternoose/SystemRoot/xam.xex&quot;</span>);</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    <span class="comment">// XexLoader loader((uint8_t*)buf, size);</span></div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    mainThreadStackSize = xam.GetStackSize();</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    mainThread = <span class="keyword">new</span> CPUThread(xam.GetEntryPoint(), xam.GetStackSize(), xam);</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    mainThreadStackSize = xam-&gt;GetStackSize();</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    mainThread = <span class="keyword">new</span> CPUThread(xam-&gt;GetEntryPoint(), xam-&gt;GetStackSize(), *xam);</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    mainThread-&gt;SetArg(0, 0xBCBCBCBC);</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    mainThread-&gt;SetArg(1, 1);</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    mainThread-&gt;SetArg(2, 0);</div>
@@ -158,7 +158,7 @@ $(function() { codefold.init(1); });
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    <span class="keywordflow">return</span> 0;</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>}</div>
-<div class="ttc" id="aclassXexLoader_html"><div class="ttname"><a href="../../d8/dc6/classXexLoader.html">XexLoader</a></div><div class="ttdef"><b>Definition</b> <a href="../../db/db2/xex_8h_source.html#l00099">xex.h:100</a></div></div>
+<div class="ttc" id="aclassXexLoader_html"><div class="ttname"><a href="../../d8/dc6/classXexLoader.html">XexLoader</a></div><div class="ttdef"><b>Definition</b> <a href="../../db/db2/xex_8h_source.html#l00110">xex.h:111</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
