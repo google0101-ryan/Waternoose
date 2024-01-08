@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['pagedescriptor_5ft_0',['pageDescriptor_t',['../df/dc0/structpageDescriptor__t.html',1,'']]]
+  ['optionalheader_5ft_0',['optionalHeader_t',['../db/da1/structoptionalHeader__t.html',1,'']]]
 ];

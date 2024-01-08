@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['fileformatinfo_5ft_0',['fileFormatInfo_t',['../d2/dad/structfileFormatInfo__t.html',1,'']]]
+  ['basiccompression_5ft_0',['basicCompression_t',['../d3/d5a/structbasicCompression__t.html',1,'']]]
 ];

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['importheader_5ft_0',['importHeader_t',['../dc/d78/structimportHeader__t.html',1,'']]]
+  ['fileformatinfo_5ft_0',['fileFormatInfo_t',['../d2/dad/structfileFormatInfo__t.html',1,'']]]
 ];

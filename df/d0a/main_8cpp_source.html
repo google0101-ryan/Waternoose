@@ -139,25 +139,30 @@ $(function() { codefold.init(1); });
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    std::atexit(Memory::Dump);</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    xam = <span class="keyword">new</span> <a class="code hl_class" href="../../d8/dc6/classXexLoader.html">XexLoader</a>((uint8_t*)xam_buf, xam_size, <span class="stringliteral">&quot;.waternoose/SystemRoot/xam.xex&quot;</span>);</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    <span class="comment">// XexLoader loader((uint8_t*)buf, size);</span></div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    mainThreadStackSize = xam-&gt;GetStackSize();</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    mainThread = <span class="keyword">new</span> CPUThread(xam-&gt;GetEntryPoint(), xam-&gt;GetStackSize(), *xam);</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    mainThread-&gt;SetArg(0, 0xBCBCBCBC);</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    mainThread-&gt;SetArg(1, 1);</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    mainThread-&gt;SetArg(2, 0);</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    std::atexit(atexit_handler);</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="keywordflow">while</span> (1)</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    {</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>        mainThread-&gt;Run();</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    }</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    <a class="code hl_class" href="../../d8/dc6/classXexLoader.html">XexLoader</a> loader((uint8_t*)buf, size, argv[0]);</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="preprocessor">#if 1</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    mainThreadStackSize = xam-&gt;GetStackSize();</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    mainThread = <span class="keyword">new</span> CPUThread(xam-&gt;GetEntryPoint(), xam-&gt;GetStackSize(), *xam);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    mainThread-&gt;SetArg(0, 0xBCBCBCBC);</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    mainThread-&gt;SetArg(1, 1);</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    mainThread-&gt;SetArg(2, 0);</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span><span class="preprocessor">#else</span></div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    mainThreadStackSize = loader.GetStackSize();</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    mainThread = <span class="keyword">new</span> CPUThread(loader.GetEntryPoint(), loader.GetStackSize(), loader);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    std::atexit(atexit_handler);</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="keyword">delete</span> mainThread;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    <span class="keywordflow">return</span> 0;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>}</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="keywordflow">while</span> (1)</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    {</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>        mainThread-&gt;Run();</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    }</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    <span class="keyword">delete</span> mainThread;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    <span class="keywordflow">return</span> 0;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>}</div>
 <div class="ttc" id="aclassXexLoader_html"><div class="ttname"><a href="../../d8/dc6/classXexLoader.html">XexLoader</a></div><div class="ttdef"><b>Definition</b> <a href="../../db/db2/xex_8h_source.html#l00110">xex.h:111</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
