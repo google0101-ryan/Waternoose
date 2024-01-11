@@ -18,7 +18,11 @@ void atexit_handler()
 int main(int argc, char** argv)
 {
 	VFS::SetRootDirectory(".waternoose");
-	VFS::MountDirectory("/SystemRoot", "SystemRoot");
+	VFS::MountDirectory("/SystemRoot", "systemroot");
+	VFS::MountDirectory("/Device/Flash", "flash");
+	VFS::MountDirectory("/Device/Harddisk0/Partition0", "drv0p0");
+	VFS::MountDirectory("/Device/Harddisk0/Partition1", "drv0p1");
+	VFS::MountDirectory("/Device/Cdrom0", "cdrom");
 
 	if (argc < 2)
 	{
@@ -29,7 +33,9 @@ int main(int argc, char** argv)
 	char* xam_buf;
 	size_t xam_size;
 
-	std::ifstream file(".waternoose/SystemRoot/xam.xex", std::ios::binary | std::ios::ate);
+	std::ifstream file(".waternoose/systemroot/xam.xex", std::ios::binary | std::ios::ate);
+	if (!file.is_open())
+		printf("Failed to open file %s\n", ".waternoose/systemroot/xam.xex");
 	xam_size = file.tellg();
 	file.seekg(0, std::ios::beg);
 	xam_buf = new char[xam_size];
@@ -53,7 +59,7 @@ int main(int argc, char** argv)
 	std::atexit(Memory::Dump);
 
 	xam = new XexLoader((uint8_t*)xam_buf, xam_size, ".waternoose/SystemRoot/xam.xex");
-	XexLoader loader((uint8_t*)buf, size, argv[0]);
+	//XexLoader loader((uint8_t*)buf, size, argv[0]);
 
 #if 1
 	mainThreadStackSize = xam->GetStackSize();

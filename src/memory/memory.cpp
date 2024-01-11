@@ -10,6 +10,7 @@
 #include <bitset>
 #include <loader/xex.h>
 #include <cpu/CPU.h>
+#include <tmmintrin.h>
 #include "memory.h"
 
 extern uint32_t mainThreadStackSize;
@@ -26,6 +27,9 @@ void Memory::Initialize()
 	readPages = new uint8_t*[MAX_ADDRESS_SPACE / PAGE_SIZE];
 	writePages = new uint8_t*[MAX_ADDRESS_SPACE / PAGE_SIZE];
 	usedPages.reset();
+
+	for (size_t i = 0; i < 64*1024; i += 4096)
+		usedPages[i / 4096] = true;
 }
 
 void Memory::Dump()
@@ -138,15 +142,28 @@ bool Memory::GetAllocInfo(uint32_t addr, AllocInfo& outInfo)
 	return false;
 }
 
-uint8_t Memory::Read8(uint32_t addr)
+uint8_t Memory::Read8(uint32_t addr, bool slow)
 {
-	if (!readPages[addr / PAGE_SIZE])
+	if (!slow)
 	{
-		printf("Read8 from unmapped addr 0x%08x\n", addr);
-		exit(1);
-	}
+		if (!readPages[addr / PAGE_SIZE])
+		{
+			return Read8(addr, true);
+		}
 
-	return readPages[addr / PAGE_SIZE][addr % PAGE_SIZE];
+		return readPages[addr / PAGE_SIZE][addr % PAGE_SIZE];
+	}
+	else
+	{
+		switch (addr)
+		{
+		case 0x15A:
+			return 0x06;
+		default:
+			printf("Read8 from unmapped addr 0x%08x\n", addr);
+			exit(1);
+		}
+	}
 }
 
 uint16_t Memory::Read16(uint32_t addr, bool slow)
@@ -165,11 +182,11 @@ uint16_t Memory::Read16(uint32_t addr, bool slow)
 		switch (addr)
 		{
 		case 0x10158:
-			return 0x2; // Some kind of console type (maybe debug vs retail?). xbdm.xex relies on this while booting
+			return bswap16(0x2); // Some kind of console type (maybe debug vs retail?). xbdm.xex relies on this while booting
 		case 0x1015A:
 			return 0; // More xbdm.xex nonsense
 		case 0x1015C:
-			return 0x4f80; // According to assert messages inside xbdm, this is the console's firmware revision
+			return bswap16(0x4f80); // According to assert messages inside xbdm, this is the console's firmware revision
 		case 0x1015E:
 			return 0; // Setting this to 0x8000 will cause a bunch of extra stuff to happen inside xbdm
 		case 0x10164:
@@ -197,10 +214,17 @@ uint32_t Memory::Read32(uint32_t addr, bool slow)
 	}
 	else
 	{
+		static int system_ticks = 0;
 		switch (addr)
 		{
+		case 0x59:
+			return 0;
+		case 0xbd:
+			return bswap32(system_ticks++);
+		case 0x156:
+			return bswap32(0x20);
 		case 0x10156:
-			return 0x2000000; // Setting this to 0x2000000 causes some kind of memory address to be set to 1
+			return bswap32(0x2000000); // Setting this to 0x2000000 causes some kind of memory address to be set to 1
 		default:
 			printf("Read32 from unmapped address 0x%08x\n", addr);
 			exit(1);
@@ -217,6 +241,28 @@ uint64_t Memory::Read64(uint32_t addr)
 	}
 
 	return bswap64(*(uint64_t*)&readPages[addr / PAGE_SIZE][addr % PAGE_SIZE]);
+}
+
+unsigned __int128 swap(unsigned __int128 n)
+{
+    unsigned __int128 m;
+    const uint64_t* src = (const uint64_t*)(&n);
+    uint64_t* dest = (uint64_t*)(&m);
+    dest[1] = bswap64(src[0]);
+    dest[0] = bswap64(src[1]);
+    return m;
+}
+
+__uint128_t Memory::Read128(uint32_t addr)
+{
+	if (!readPages[addr / PAGE_SIZE])
+	{
+		printf("Read128 from unmapped addr 0x%08x\n", addr);
+		exit(1);
+	}
+
+	__uint128_t t = *(__uint128_t*)&readPages[addr / PAGE_SIZE][addr % PAGE_SIZE];
+	return swap(t);
 }
 
 void Memory::Write8(uint32_t addr, uint8_t data)
@@ -261,4 +307,16 @@ void Memory::Write64(uint32_t addr, uint64_t data)
 	}
 
 	*(uint64_t*)&writePages[addr / PAGE_SIZE][addr % PAGE_SIZE] = bswap64(data);
+}
+
+void Memory::Write128(uint32_t addr, __uint128_t data)
+{
+	if (!writePages[addr / PAGE_SIZE])
+	{
+		printf("Write64 to unmapped addr 0x%08x\n", addr);
+		exit(1);
+	}
+
+	data = swap(data);
+	*(__uint128_t*)&writePages[addr / PAGE_SIZE][addr % PAGE_SIZE] = data;
 }

@@ -10,6 +10,7 @@
 #include <util.h>
 #include <loader/lzx.h>
 #include <kernel/kernel.h>
+#include <kernel/modules/xboxkrnl.h>
 
 static uint32_t handle = 0x10000001;
 
@@ -306,6 +307,13 @@ void XexLoader::ParseLibraryInfo(uint32_t offset, xexLibrary_t &lib, int index, 
 			Memory::Write32(recordAddr+0x04, 0x616B0000 | (addr & 0xFFFF));
 			Memory::Write32(recordAddr+0x08, 0x7D6903A6);
 			Memory::Write32(recordAddr+0x0C, 0x4E800420);
+		}
+		else
+		{
+			if (name == "xboxkrnl.exe" && krnlModule.IsExportVariable(record & 0xFFFF))
+			{
+				printf("TODO: Variable import 0x%08x\n", record);
+			}
 		}
 	}
 }
